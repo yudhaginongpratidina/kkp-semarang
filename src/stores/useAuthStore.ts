@@ -53,7 +53,31 @@ const useAuthStore = create<AuthState & AuthAction>((set, get) => ({
             set({ is_loading: false })
         }
     },
-    register: async () => { },
+    register: async (e?: React.FormEvent) => {
+        e?.preventDefault()
+        const { username, password } = get()
+        set({ is_loading: true, error: null })
+        try {
+            if (username === 'admin' && password === 'admin') {
+                console.log('Login successful as admin')
+            } else if (username === 'customer-service' && password === 'customer-service') {
+                console.log('Login successful as customer service')
+            } else if (username === 'laboratory' && password === 'laboratory') {
+                console.log('Login successful as laboratory')
+            } else if (username === 'smkhp' && password === 'smkhp') {
+                console.log('Login successful as smkhp')
+            } else {
+                throw new Error('Invalid username or password')
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                set({ error: error.message })
+            }
+            console.log(error)
+        } finally {
+            set({ is_loading: false })
+        }
+    },
 }))
 
 export default useAuthStore

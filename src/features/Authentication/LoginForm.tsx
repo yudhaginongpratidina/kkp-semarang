@@ -19,6 +19,7 @@ export default function LoginForm() {
         <FormControl onSubmit={login}>
             <TextField
                 type="text" required={true} id="username" label="username" icon={<FaUser className="w-4 h-4" />} loading={is_loading}
+                placeholder="your username"
                 schema={z
                     .string()
                     .min(3, { message: "username must be at least 3 characters long" })}
@@ -29,6 +30,7 @@ export default function LoginForm() {
             />
             <TextField
                 type="password" required={true} id="password" label="password" icon={<FaLock className="w-4 h-4" />} loading={is_loading}
+                placeholder="*********"
                 schema={z
                     .string()
                     .min(3, { message: "password must be at least 3 characters long" })}

@@ -18,7 +18,7 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
     loading?: boolean
 }
 
-export default function TextField({ id, label, required, type, controller, schema, icon, disabled, loading }: TextFieldProps) {
+export default function TextField({ id, label, required, type, controller, schema, icon, disabled, loading, ...props }: TextFieldProps) {
 
     const [error, setError] = useState<string | null>(null)
     const [touched, setTouched] = useState(false)
@@ -69,7 +69,7 @@ export default function TextField({ id, label, required, type, controller, schem
                     </div>
                 )}
                 <input
-                    id={id} name={id} type={type} autoComplete="off"
+                    id={id} name={id} type={type} autoComplete="off" {...props}
                     value={controller.value} onChange={handleChange}
                     disabled={isBlocked} required={required} 
                     className={`w-full h-10 px-2 border rounded-sm outline-none transition ${iconClass} ${borderClass} ${isBlocked ? "bg-slate-200 cursor-not-allowed text-slate-400" : "bg-slate-100"}`}
