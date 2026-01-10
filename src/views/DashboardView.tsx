@@ -1,5 +1,6 @@
 // features
 import { KPPSidebar, KPPHeader, KPPMain } from "../features/Layout"
+import { StatisticsDashboard, QueueDashboard } from "../features/Dashboard"
 
 export default function DashboardView() {
     return (
@@ -7,6 +8,8 @@ export default function DashboardView() {
             <KPPSidebar />
             <KPPMain>
                 <KPPHeader />
+                <StatisticsDashboard />
+                <QueueDashboard />
             </KPPMain>
         </div>
     )
