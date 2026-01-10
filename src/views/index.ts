@@ -1,0 +1,4 @@
+export { default as AuthenticationView } from './AuthenticationView'
+export { default as DashboardView } from './DashboardView'
+export { default as HistoryView } from './HistoryView'
+export { default as AccountView } from './AccountView'
