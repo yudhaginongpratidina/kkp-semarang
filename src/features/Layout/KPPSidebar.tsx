@@ -13,7 +13,7 @@ export default function KPPSidebar() {
                     KPP RI | SEMARANG
                 </h1>
             </div>
-            <div className="w-full md:px-4 md:py-2 flex flex-col">
+            <div className="w-full sticky top-0 md:px-4 md:py-2 flex flex-col">
                 <Item
                     href="/dashboard"
                     icon={<FaHome className="w-5 h-5" />}
