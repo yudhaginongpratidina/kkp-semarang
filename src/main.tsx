@@ -18,6 +18,9 @@ import {
 // routing
 const router = createBrowserRouter([
 	{ path: "/", element: <AuthenticationView /> },
+	{ path: "/login", element: <AuthenticationView /> },
+	{ path: "/create-account", element: <AuthenticationView /> },
+	
 	{ path: "/dashboard", element: <DashboardView /> },
 	{ path: "/history", element: <HistoryView /> },
 	{ path: "/account", element: <AccountView /> },
