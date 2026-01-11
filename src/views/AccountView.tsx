@@ -1,5 +1,6 @@
 // features
 import { KPPSidebar, KPPHeader, KPPMain } from "../features/Layout"
+import { AccountForm } from "../features/Account"
 
 export default function AccountView() {
     return (
@@ -7,6 +8,7 @@ export default function AccountView() {
             <KPPSidebar />
             <KPPMain>
                 <KPPHeader />
+                <AccountForm />
             </KPPMain>
         </div>
     )
