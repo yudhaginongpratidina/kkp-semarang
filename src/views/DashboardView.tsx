@@ -1,15 +1,23 @@
+// libraries
+import { useLocation } from "react-router-dom"
+
 // features
 import { KPPSidebar, KPPHeader, KPPMain } from "../features/Layout"
-import { StatisticsDashboard, QueueDashboard } from "../features/Dashboard"
+import { StatisticsDashboard, TabDashboard, QueueDashboard, AnalyticsDashboard } from "../features/Dashboard"
 
 export default function DashboardView() {
+    const location = useLocation()
+
     return (
         <div className="w-full flex">
             <KPPSidebar />
             <KPPMain>
                 <KPPHeader />
                 <StatisticsDashboard />
-                <QueueDashboard />
+                <TabDashboard />
+
+                {location.pathname === "/dashboard" && <QueueDashboard />}
+                {location.pathname === "/dashboard/analytics" && <AnalyticsDashboard />}
             </KPPMain>
         </div>
     )
