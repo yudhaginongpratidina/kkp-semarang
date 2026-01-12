@@ -57,21 +57,21 @@ export default function DetailHistory() {
                             <div className="flex items-center gap-3">
                                 <MdFingerprint className="w-5 h-5 text-blue-600" />
                                 <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-[120px]">NIK</span>
+                                    <span className="text-sm font-medium text-gray-600 min-w-30">NIK</span>
                                     <span className="text-sm text-gray-800">: 0000000000</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <MdPerson className="w-5 h-5 text-blue-600" />
                                 <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-[120px]">Nama Lengkap</span>
+                                    <span className="text-sm font-medium text-gray-600 min-w-30">Nama Lengkap</span>
                                     <span className="text-sm text-gray-800">: Silent Hil</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <MdLocationOn className="w-5 h-5 text-blue-600" />
                                 <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-[120px]">Alamat</span>
+                                    <span className="text-sm font-medium text-gray-600 min-w-30">Alamat</span>
                                     <span className="text-sm text-gray-800">: Jln Kenangan</span>
                                 </div>
                             </div>
