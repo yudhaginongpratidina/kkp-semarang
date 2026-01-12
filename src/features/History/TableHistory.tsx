@@ -1,4 +1,5 @@
-import { FaWhatsapp, FaEye, FaBuilding, FaBriefcase, FaSearch} from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { FaWhatsapp, FaEye, FaBuilding, FaBriefcase, FaSearch } from "react-icons/fa";
 
 export default function TableHistory() {
     return (
@@ -35,30 +36,35 @@ export default function TableHistory() {
                             </thead>
                             <tbody>
                                 <ItemData
+                                    id="1"
                                     full_name="Ahmad Santoso"
                                     position="Software Engineer"
                                     company="PT. Gojek Indonesia"
                                     phone="08123456789"
                                 />
                                 <ItemData
+                                    id="2"
                                     full_name="Siti Nurhaliza"
                                     position="Product Manager"
                                     company="PT. Tokopedia"
                                     phone="08234567890"
                                 />
                                 <ItemData
+                                    id="3"
                                     full_name="Budi Prasetyo"
                                     position="UI/UX Designer"
                                     company="PT. Bukalapak"
                                     phone="08345678901"
                                 />
                                 <ItemData
+                                    id="4"
                                     full_name="Dewi Lestari"
                                     position="Data Scientist"
                                     company="PT. Traveloka"
                                     phone="08456789012"
                                 />
                                 <ItemData
+                                    id="5"
                                     full_name="Rudi Hermawan"
                                     position="Backend Developer"
                                     company="PT. Shopee Indonesia"
@@ -98,7 +104,7 @@ export default function TableHistory() {
     )
 }
 
-const ItemData = ({ full_name, position, company, phone }: { full_name: string, position: string, company: string, phone: string }) => {
+const ItemData = ({ id, full_name, position, company, phone }: {id:string, full_name: string, position: string, company: string, phone: string }) => {
     const initial = full_name.charAt(0).toUpperCase();
     const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500'];
     const colorIndex = full_name.charCodeAt(0) % colors.length;
@@ -139,13 +145,14 @@ const ItemData = ({ full_name, position, company, phone }: { full_name: string, 
             </td>
             <td className="p-4">
                 <div className="flex items-center justify-center gap-2">
-                    <button
+                    <Link
+                        to={`/history/${id}`}
                         className="px-4 py-2 bg-blue-50 text-blue-700 rounded-sm hover:bg-blue-100 transition-all duration-200 font-medium text-sm border border-blue-200 flex items-center gap-2 opacity-70 group-hover:opacity-100"
                         title="Lihat Detail"
                     >
                         <FaEye className="w-4 h-4" />
                         Detail
-                    </button>
+                    </Link>
                 </div>
             </td>
         </tr>

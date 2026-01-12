@@ -7,7 +7,7 @@ import { TableHistory, DetailsHistory } from "../features/History"
 
 export default function HistoryView() {
     const location = useLocation()
-    const { fullname } = useParams<{ fullname: string }>();
+    const { id } = useParams<{ id: string }>();
     
     return (
         <div className="w-full flex">
@@ -15,7 +15,7 @@ export default function HistoryView() {
             <KPPMain>
                 <KPPHeader />
                 {location.pathname === "/history" && <TableHistory />}
-                {location.pathname === `/history/${fullname}` && <DetailsHistory />}
+                {location.pathname === `/history/${id}` && <DetailsHistory />}
             </KPPMain>
         </div>
     )

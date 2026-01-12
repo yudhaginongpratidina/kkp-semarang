@@ -24,7 +24,7 @@ const router = createBrowserRouter([
 	{ path: "/dashboard", element: <DashboardView /> },
 	{ path: "/dashboard/analytics", element: <DashboardView /> },
 	{ path: "/history", element: <HistoryView /> },
-	{ path: "/history/:fullname", element: <HistoryView /> },
+	{ path: "/history/:id", element: <HistoryView /> },
 	{ path: "/account", element: <AccountView /> },
 ]);
 
