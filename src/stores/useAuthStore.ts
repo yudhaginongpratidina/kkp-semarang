@@ -1,6 +1,13 @@
 // library
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    reauthenticateWithCredential,
+    EmailAuthProvider,
+    updatePassword
+} from "firebase/auth";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
@@ -12,12 +19,14 @@ type AuthState = {
     nip: string
     email: string
     password: string
+    current_password: string
     role: string
     is_loading: boolean
     is_error: boolean
     message: string
     user: {
         id: string
+        email: string
         role: string
     }
 }
@@ -28,6 +37,8 @@ type AuthAction = {
     login: (e?: React.FormEvent) => Promise<void>
     register: (e?: React.FormEvent) => Promise<void>
     get_account: () => Promise<void>
+    update_account: () => Promise<void>
+    update_password: () => Promise<void>
     logout: () => Promise<void>
 }
 
@@ -36,9 +47,11 @@ const initialState: Omit<AuthState, 'is_loading' | 'is_error' | 'message'> = {
     email: '',
     nip: '',
     password: '',
+    current_password: '',
     role: 'operator',
     user: {
         id: '',
+        email: '',
         role: ''
     }
 }
@@ -51,150 +64,205 @@ const useAuthStore = create<AuthState & AuthAction>()(
             is_error: false,
             message: '',
 
-            // set field dynamic
+            // Set field dinamis
             setField: (key, value) => set({ [key]: value } as Partial<AuthState>),
 
-            // reset state
+            // Reset seluruh state
             reset: () => set({ ...initialState, is_loading: false, is_error: false, message: '' }),
 
-            // logout
+            // Logout
             logout: async () => {
                 try {
                     await signOut(auth);
                     set({
-                        user: { id: '', role: '' },
+                        user: { id: '', email: '', role: '' },
+                        full_name: '',
                         email: '',
                         nip: '',
-                        role: 'operator',
-                        full_name: '',
                         password: '',
+                        current_password: '',
+                        role: 'operator',
                         is_loading: false,
                         is_error: false,
                         message: 'Logout successfully'
                     });
-                    // redirect ke halaman login
-                    setTimeout(() => window.location.href = '/login', 2000)
-                    setTimeout(() => set({ is_error: false, message: '' }), 3000)
+                    // Redirect ke halaman login
+                    setTimeout(() => window.location.href = '/login', 2000);
                 } catch (error) {
                     console.error("Logout error:", error);
-                    set({ is_error: true, message: 'Logout failed' })
+                    set({ is_error: true, message: 'Logout failed' });
+                    setTimeout(() => set({ is_error: false, message: '' }), 3000);
                 }
             },
 
-            // register
+            // Register
             register: async (e?: React.FormEvent) => {
-                e?.preventDefault()
-                const { full_name, email, nip, password, role } = get()
-                set({ is_loading: true, is_error: false, message: '' })
+                e?.preventDefault();
+                const { full_name, email, nip, password, role } = get();
+                set({ is_loading: true, is_error: false, message: '' });
 
                 try {
-                    const user_role = role || 'operator'
+                    const user_role = role || 'operator';
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    const uid = userCredential.user.uid;
 
-                    // create user
-                    const user_credential = await createUserWithEmailAndPassword(auth, email, password)
-                    const uid = user_credential.user.uid
-
-                    // save additional info to Firestore
                     await setDoc(doc(db, "officers", uid), {
                         full_name,
                         email,
                         nip,
                         role: user_role,
                         createdAt: new Date()
-                    })
+                    });
 
-                    set({ is_error: false, message: 'Create account successfully' })
-                    console.log("User registered & saved to Firestore:", { uid, full_name, email, nip, role: user_role })
-
-                    // redirect ke login page
-                    setTimeout(() => window.location.href = '/', 2000)
-                    setTimeout(() => set({ is_error: false, message: '' }), 3000)
+                    set({ is_error: false, message: 'Account created successfully' });
+                    setTimeout(() => window.location.href = '/', 2000);
                 } catch (error) {
-                    console.error("Register error:", error)
+                    console.error("Register error:", error);
                     if (error instanceof Error) {
-                        const firebaseCode = (error as any).code || ''
-                        const message = firebaseCode === 'auth/email-already-in-use' ? 'EMAIL_EXISTS' : error.message
-                        set({ is_error: true, message })
+                        const firebaseCode = (error as any).code || '';
+                        const message = firebaseCode === 'auth/email-already-in-use' ? 'EMAIL_EXISTS' : error.message;
+                        set({ is_error: true, message });
+                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
                     }
                 } finally {
-                    set({ is_loading: false })
+                    set({ is_loading: false });
                 }
             },
 
-            // login
+            // Login
             login: async (e?: React.FormEvent) => {
-                e?.preventDefault()
-                const { email, password } = get()
-                set({ is_loading: true, is_error: false, message: '' })
+                e?.preventDefault();
+                const { email, password } = get();
+                set({ is_loading: true, is_error: false, message: '' });
 
                 try {
-                    const userCredential = await signInWithEmailAndPassword(auth, email, password)
-                    const uid = userCredential.user.uid
-                    // console.log("User logged in:", uid)
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                    const uid = userCredential.user.uid;
 
-                    // fetch role & NIP from Firestore
-                    const userDoc = await getDoc(doc(db, "officers", uid))
+                    const userDoc = await getDoc(doc(db, "officers", uid));
                     if (userDoc.exists()) {
-                        const data = userDoc.data()
+                        const data = userDoc.data();
                         set({
-                            user: { id: uid, role: data.role },
+                            user: { id: uid, email: data.email, role: data.role },
                             role: data.role,
                             nip: data.nip
-                        })
+                        });
                     }
 
-                    set({ is_error: false, message: 'Login successfully' })
-                    // redirect ke dashboard
-                    setTimeout(() => window.location.href = '/dashboard', 2000)
-                    setTimeout(() => set({ is_error: false, message: '' }), 3000)
+                    set({ is_error: false, message: 'Login successfully', password: '' });
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
                 } catch (error) {
-                    console.error("Login error:", error)
+                    console.error("Login error:", error);
                     if (error instanceof Error) {
-                        const firebaseCode = (error as any).code || ''
-                        let message = ''
+                        const firebaseCode = (error as any).code || '';
+                        let message = '';
                         switch (firebaseCode) {
                             case 'auth/user-not-found':
-                                message = 'USER_NOT_FOUND'
-                                break
+                                message = 'USER_NOT_FOUND';
+                                break;
                             case 'auth/wrong-password':
-                                message = 'INVALID_PASSWORD'
-                                break
+                                message = 'INVALID_PASSWORD';
+                                break;
                             default:
-                                message = error.message
+                                message = error.message;
                         }
-                        set({ is_error: true, message })
+                        set({ is_error: true, message });
+                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
                     }
                 } finally {
-                    set({ is_loading: false })
+                    set({ is_loading: false });
                 }
             },
 
-            // get account
+            // Get account
             get_account: async () => {
-                const { user, setField } = get()
-
+                const { user, setField } = get();
                 try {
-                    if (!user.id) {
-                        throw new Error("User not logged in")
-                    }
+                    if (!user.id) throw new Error("User not logged in");
 
-                    const userDoc = await getDoc(doc(db, "officers", user.id))
+                    const userDoc = await getDoc(doc(db, "officers", user.id));
                     if (userDoc.exists()) {
-                        const data = userDoc.data()
-                        setField("full_name", data.full_name || "")
-                        setField("nip", data.nip || "")
+                        const data = userDoc.data();
+                        setField("full_name", data.full_name || '');
+                        setField("role", data.role || 'operator');
+                        setField("nip", data.nip || '');
                     } else {
-                        throw new Error("User data not found in Firestore")
+                        throw new Error("User data not found in Firestore");
                     }
                 } catch (error) {
-                    console.error("Get account error:", error)
+                    console.error("Get account error:", error);
                     if (error instanceof Error) {
-                        set({ is_error: true, message: error.message })
-                        setTimeout(() => set({ is_error: false, message: '' }), 3000)
+                        set({ is_error: true, message: error.message });
+                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
                     }
                 }
-            }
+            },
 
+            // Update account (full_name)
+            update_account: async (e?: React.FormEvent) => {
+                e?.preventDefault();
+                const { user, full_name, setField } = get();
+
+                try {
+                    if (!user.id) throw new Error("User not logged in");
+
+                    const docRef = doc(db, "officers", user.id);
+                    await updateDoc(docRef, {
+                        full_name,
+                        updatedAt: new Date()
+                    });
+
+                    setField("full_name", full_name);
+                    set({ is_error: false, message: "Account updated successfully" });
+                    setTimeout(() => set({ is_error: false, message: '' }), 3000);
+                } catch (error) {
+                    console.error("Update account error:", error);
+                    if (error instanceof Error) {
+                        set({ is_error: true, message: error.message });
+                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
+                    }
+                }
+            },
+
+            // Update password
+            update_password: async (e?: React.FormEvent) => {
+                e?.preventDefault();
+                const { user, current_password, password } = get();
+                set({ is_loading: true, is_error: false, message: '' });
+
+                try {
+                    if (!auth.currentUser) throw new Error("User not logged in");
+
+                    const credential = EmailAuthProvider.credential(user.email, current_password);
+                    await reauthenticateWithCredential(auth.currentUser, credential);
+
+                    await updatePassword(auth.currentUser, password);
+
+                    set({ is_error: false, message: "Password updated successfully", password: '', current_password: '' });
+                    setTimeout(() => set({ is_error: false, message: '' }), 3000);
+                    console.log("Password updated successfully");
+                } catch (error) {
+                    console.error("Update password error:", error);
+                    if (error instanceof Error) {
+                        const firebaseCode = (error as any).code || '';
+                        let message = '';
+                        switch (firebaseCode) {
+                            case 'auth/wrong-password':
+                                message = 'CURRENT_PASSWORD_INVALID';
+                                break;
+                            case 'auth/weak-password':
+                                message = 'PASSWORD_TOO_WEAK';
+                                break;
+                            default:
+                                message = error.message;
+                        }
+                        set({ is_error: true, message });
+                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
+                    }
+                } finally {
+                    set({ is_loading: false });
+                }
+            }
 
         }),
         {

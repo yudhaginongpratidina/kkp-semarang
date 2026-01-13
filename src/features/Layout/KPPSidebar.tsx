@@ -1,10 +1,16 @@
 // libraries
 import { Link, useLocation } from "react-router-dom"
 
+// stores
+import { useAuthStore } from "../../stores";
+
 // icons
 import { FaHome, FaHistory, FaUser } from "react-icons/fa";
+import { IoLogOut } from "react-icons/io5";
 
 export default function KPPSidebar() {
+    const { logout } = useAuthStore()
+
     return (
         <aside className="w-20 md:w-full md:max-w-xs min-h-screen bg-white">
             <div className="w-full h-14 px-4 flex items-center gap-2 bg-slate-100">
@@ -29,6 +35,10 @@ export default function KPPSidebar() {
                     icon={<FaUser className="w-5 h-5" />}
                     title="account"
                 />
+                <button onClick={logout} className="w-full h-14 md:p-0.5 flex justify-center md:justify-start items-center hover:rounded-sm hover:cursor-pointer hover:bg-slate-100">
+                    <div className={`w-12 h-12 flex justify-center items-center text-slate-700`}><IoLogOut className="w-5 h-5" /></div>
+                    <h1 className={`hidden md:block capitalize font-semibold text-slate-700`}>logout</h1>
+                </button>
             </div>
         </aside>
     )

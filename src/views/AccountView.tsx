@@ -1,6 +1,6 @@
 // features
 import { KPPSidebar, KPPHeader, KPPMain } from "../features/Layout"
-import { AccountIfoForm, AccountForm } from "../features/Account"
+import { AccountIfoForm, AccountPasswordForm } from "../features/Account"
 
 export default function AccountView() {
     return (
@@ -9,8 +9,8 @@ export default function AccountView() {
             <KPPMain>
                 <KPPHeader />
                 <div className="w-full flex flex-col gap-4">
-                    <AccountIfoForm/>
-                    <AccountForm />
+                    <AccountIfoForm />
+                    <AccountPasswordForm />
                 </div>
             </KPPMain>
         </div>

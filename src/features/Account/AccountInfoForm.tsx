@@ -12,7 +12,7 @@ import { useAuthStore } from "../../stores"
 import { FaAddressCard, FaUser } from "react-icons/fa"
 
 export default function AccountInfoForm() {
-    const { full_name, nip, is_loading, setField, get_account } = useAuthStore()
+    const { full_name, nip, role, is_loading, setField, get_account, update_account } = useAuthStore()
 
     useEffect(() => {
         get_account()
@@ -21,7 +21,7 @@ export default function AccountInfoForm() {
     return (
         <div className="w-full p-4">
             <div className="w-full max-w-xl p-4 bg-white">
-                <FormControl>
+                <FormControl onSubmit={update_account}>
                     <TextField
                         type="text" required={true} id="full_name" label="full name" icon={<FaUser className="w-4 h-4" />} loading={is_loading}
                         schema={z
@@ -40,6 +40,16 @@ export default function AccountInfoForm() {
                         controller={{
                             value: nip,
                             onChange: (e) => setField('nip', e.target.value)
+                        }}
+                    />
+                    <TextField
+                        type="text" required={true} id="role" label="role" icon={<FaAddressCard className="w-4 h-4" />} loading={is_loading} disabled
+                        schema={z
+                            .string()
+                            .min(3, { message: "role must be at least 3 characters long" })}
+                        controller={{
+                            value: role,
+                            onChange: (e) => setField('role', e.target.value)
                         }}
                     />
                     <Button type="submit" is_loading={is_loading} className="bg-blue-500 hover:bg-blue-600 text-white">
