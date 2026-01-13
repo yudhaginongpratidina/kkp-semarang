@@ -5,13 +5,14 @@ import { z } from "zod"
 import { FormControl, TextField, Button } from "../../components"
 
 // stores
-import { useAccountStore } from "../../stores"
+import { useAccountStore, useAuthStore } from "../../stores"
 
 // icons
 import { FaLock, FaUser } from "react-icons/fa"
 
 export default function AccountForm() {
     const { username, password, role, setField, is_loading, is_edit, update } = useAccountStore()
+    const { logout, is_loading: is_loading_logout } = useAuthStore()
 
     return (
         <div className="w-full p-4">
@@ -67,8 +68,8 @@ export default function AccountForm() {
                             <Button type="button" onClick={() => setField('is_edit', true)} is_loading={is_loading} className="bg-blue-500 hover:bg-blue-600 text-white">
                                 Edit Account
                             </Button>
-                            <Button type="button" onClick={() => setField('is_edit', true)} is_loading={is_loading} className="bg-red-500 hover:bg-red-600 text-white">
-                                Exit
+                            <Button type="button" onClick={logout} is_loading={is_loading_logout} className="bg-red-500 hover:bg-red-600 text-white">
+                                Logout
                             </Button>
                         </div>
                     )}

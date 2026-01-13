@@ -25,9 +25,9 @@ type AuthState = {
 type AuthAction = {
     setField: <K extends keyof AuthState>(key: K, value: AuthState[K]) => void
     reset: () => void
-    login: () => Promise<void>
-    register: () => Promise<void>
-    logout: () => void
+    login: (e?: React.FormEvent) => Promise<void>
+    register: (e?: React.FormEvent) => Promise<void>
+    logout: () => Promise<void>
 }
 
 const initialState: Omit<AuthState, 'is_loading' | 'is_error' | 'message'> = {
@@ -59,29 +59,24 @@ const useAuthStore = create<AuthState & AuthAction>()(
             // logout
             logout: async () => {
                 try {
-                    // logout dari Firebase
                     await signOut(auth);
-
-                    // reset Zustand state
                     set({
                         user: { id: '', role: '' },
                         email: '',
                         nip: '',
-                        role: '',
+                        role: 'operator',
                         full_name: '',
                         password: '',
                         is_loading: false,
                         is_error: false,
                         message: 'Logout successfully'
                     });
-
-                    // localStorage otomatis terhapus karena middleware persist sudah memantau state
-                    // console.log("User logged out successfully");
-
-                    setTimeout(() => window.location.href = '/', 2000)
+                    // redirect ke halaman login
+                    setTimeout(() => window.location.href = '/login', 2000)
+                    setTimeout(() => set({ is_error: false, message: '' }), 3000)
                 } catch (error) {
                     console.error("Logout error:", error);
-                    set({ is_error: true, message: 'Logout failed' });
+                    set({ is_error: true, message: 'Logout failed' })
                 }
             },
 
@@ -95,7 +90,7 @@ const useAuthStore = create<AuthState & AuthAction>()(
                     const user_role = role || 'operator'
 
                     // create user
-                    const user_credential = await createUserWithEmailAndPassword(auth, email, password);
+                    const user_credential = await createUserWithEmailAndPassword(auth, email, password)
                     const uid = user_credential.user.uid
 
                     // save additional info to Firestore
@@ -108,11 +103,11 @@ const useAuthStore = create<AuthState & AuthAction>()(
                     })
 
                     set({ is_error: false, message: 'Create account successfully' })
-                    // console.log("User registered & saved to Firestore:", { uid, full_name, email, nip, role: user_role })
+                    console.log("User registered & saved to Firestore:", { uid, full_name, email, nip, role: user_role })
 
-                    // redirect to login page
+                    // redirect ke login page
                     setTimeout(() => window.location.href = '/', 2000)
-
+                    setTimeout(() => set({ is_error: false, message: '' }), 3000)
                 } catch (error) {
                     console.error("Register error:", error)
                     if (error instanceof Error) {
@@ -132,18 +127,14 @@ const useAuthStore = create<AuthState & AuthAction>()(
                 set({ is_loading: true, is_error: false, message: '' })
 
                 try {
-                    // login with Firebase
                     const userCredential = await signInWithEmailAndPassword(auth, email, password)
                     const uid = userCredential.user.uid
-                    console.log("User logged in:", uid)
+                    // console.log("User logged in:", uid)
 
                     // fetch role & NIP from Firestore
                     const userDoc = await getDoc(doc(db, "officers", uid))
                     if (userDoc.exists()) {
                         const data = userDoc.data()
-                        // console.log("User data:", data)
-
-                        // set store
                         set({
                             user: { id: uid, role: data.role },
                             role: data.role,
@@ -151,11 +142,10 @@ const useAuthStore = create<AuthState & AuthAction>()(
                         })
                     }
 
-                    // set message
                     set({ is_error: false, message: 'Login successfully' })
-
-                    // redirect
+                    // redirect ke dashboard
                     setTimeout(() => window.location.href = '/dashboard', 2000)
+                    setTimeout(() => set({ is_error: false, message: '' }), 3000)
                 } catch (error) {
                     console.error("Login error:", error)
                     if (error instanceof Error) {
@@ -175,7 +165,6 @@ const useAuthStore = create<AuthState & AuthAction>()(
                     }
                 } finally {
                     set({ is_loading: false })
-                    setTimeout(() => set({ is_error: false, message: '' }), 3000)
                 }
             }
 
