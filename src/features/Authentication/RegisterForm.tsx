@@ -9,28 +9,46 @@ import { useAuthStore } from "../../stores"
 import { FormControl, TextField, Button } from "../../components"
 
 // icons
-import { FaUser, FaLock } from "react-icons/fa";
+import { FaUser, FaLock, FaAddressCard } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
 
 // form for login
 export default function RegisterForm() {
-    const { username, password, setField, is_loading, register } = useAuthStore()
+    const { full_name, email, nip, password, setField, is_loading, register } = useAuthStore()
 
     return (
         <FormControl onSubmit={register}>
             <TextField
-                type="text" required={true} id="username" label="username" icon={<FaUser className="w-4 h-4" />} loading={is_loading}
-                placeholder="your username"
+                type="text" required={true} id="full_name" label="full name" icon={<FaUser className="w-4 h-4" />} loading={is_loading}
                 schema={z
                     .string()
-                    .min(3, { message: "username must be at least 3 characters long" })}
+                    .min(1, { message: "full name must be at least 1 characters long" })}
                 controller={{
-                    value: username,
-                    onChange: (e) => setField('username', e.target.value)
+                    value: full_name,
+                    onChange: (e) => setField('full_name', e.target.value)
+                }}
+            />
+            <TextField
+                type="text" required={true} id="email" label="e-mail" icon={<MdEmail className="w-4 h-4" />} loading={is_loading}
+                schema={z
+                    .email()}
+                controller={{
+                    value: email,
+                    onChange: (e) => setField('email', e.target.value)
+                }}
+            />
+            <TextField
+                type="text" required={true} id="nip" label="NIP" icon={<FaAddressCard className="w-4 h-4" />} loading={is_loading}
+                schema={z
+                    .string()
+                    .min(1, { message: "nip must be at least 1 characters long" })}
+                controller={{
+                    value: nip,
+                    onChange: (e) => setField('nip', e.target.value)
                 }}
             />
             <TextField
                 type="password" required={true} id="password" label="password" icon={<FaLock className="w-4 h-4" />} loading={is_loading}
-                placeholder="*********"
                 schema={z
                     .string()
                     .min(3, { message: "password must be at least 3 characters long" })}

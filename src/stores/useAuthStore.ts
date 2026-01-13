@@ -1,11 +1,21 @@
+// library
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { create } from 'zustand'
 
+// configs
+import { auth, db } from "../configs/firebase";
+
+
 type AuthState = {
-    username: string
+    full_name: string
+    nip: string
+    email: string
     password: string
-    role: 'op-admin' | 'op-customer-service' | 'op-laboratory' | 'op-smkhp'
+    role: string
     is_loading: boolean
-    error: string | null
+    is_error: boolean
+    message: string
 }
 
 type AuthAction = {
@@ -15,38 +25,41 @@ type AuthAction = {
     register: () => Promise<void>
 }
 
-const initialState: Omit<AuthState, 'is_loading' | 'error'> = {
-    username: '',
+const initialState: Omit<AuthState, 'is_loading' | 'is_error' | 'message'> = {
+    full_name: '',
+    email: '',
+    nip: '',
     password: '',
-    role: 'op-admin',
+    role: 'operator',
 }
 
 const useAuthStore = create<AuthState & AuthAction>((set, get) => ({
     ...initialState,
     is_loading: false,
-    error: null,
+    is_error: false,
+    message: '',
     setField: (key, value) => set({ [key]: value } as Partial<AuthState>),
-    reset: () => set({ ...initialState, is_loading: false, error: null }),
+    reset: () => set({ ...initialState, is_loading: false, is_error: false, message: '' }),
     login: async (e?: React.FormEvent) => {
         e?.preventDefault()
-        const { username, password } = get()
-        set({ is_loading: true, error: null })
+        const { nip, password } = get()
+        set({ is_loading: true, is_error: false, message: '' })
 
         try {
-            if (username === 'admin' && password === 'admin') {
+            if (nip === '0' && password === 'admin') {
                 console.log('Login successful as admin')
-            } else if (username === 'customer-service' && password === 'customer-service') {
+            } else if (nip === '2' && password === 'customer-service') {
                 console.log('Login successful as customer service')
-            } else if (username === 'laboratory' && password === 'laboratory') {
+            } else if (nip === '3' && password === 'laboratory') {
                 console.log('Login successful as laboratory')
-            } else if (username === 'smkhp' && password === 'smkhp') {
+            } else if (nip === '4' && password === 'smkhp') {
                 console.log('Login successful as smkhp')
             } else {
-                throw new Error('Invalid username or password')
+                throw new Error('Invalid NIP or password')
             }
         } catch (error) {
             if (error instanceof Error) {
-                set({ error: error.message })
+                set({ is_error: true, message: error.message })
             }
             console.log(error)
         } finally {
@@ -55,27 +68,44 @@ const useAuthStore = create<AuthState & AuthAction>((set, get) => ({
     },
     register: async (e?: React.FormEvent) => {
         e?.preventDefault()
-        const { username, password } = get()
-        set({ is_loading: true, error: null })
+        const { full_name, email, nip, password, role } = get()
+        set({ is_loading: true, is_error: false, message: '' })
+
         try {
-            if (username === 'admin' && password === 'admin') {
-                console.log('Login successful as admin')
-            } else if (username === 'customer-service' && password === 'customer-service') {
-                console.log('Login successful as customer service')
-            } else if (username === 'laboratory' && password === 'laboratory') {
-                console.log('Login successful as laboratory')
-            } else if (username === 'smkhp' && password === 'smkhp') {
-                console.log('Login successful as smkhp')
-            } else {
-                throw new Error('Invalid username or password')
-            }
+            // default role
+            const user_role = role || 'operator';
+
+            // register
+            const user_credential = await createUserWithEmailAndPassword(auth, email, password);
+            const uid = user_credential.user.uid;
+            // console.log("User registered:", uid);
+
+            // add to firestore
+            await setDoc(doc(db, "officer", uid), {
+                full_name,
+                email,
+                nip,
+                role: user_role,
+                createdAt: new Date()
+            });
+
+            // set message
+            set({ is_error: false, message: 'Create account successfully' });
+
+            // redirect to login
+            setTimeout(() => window.location.href = '/', 2000);
         } catch (error) {
+            // console.error("Register error:", error);
+
             if (error instanceof Error) {
-                set({ error: error.message })
+                let firebaseCode = (error as any).code || '';
+                let message = firebaseCode === 'auth/email-already-in-use' ? 'EMAIL_EXISTS' : error.message;
+
+                set({ is_error: true, message });
+                // console.log("Error message shown to user:", message);
             }
-            console.log(error)
         } finally {
-            set({ is_loading: false })
+            set({ is_loading: false });
         }
     },
 }))

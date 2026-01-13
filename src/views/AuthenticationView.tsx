@@ -1,11 +1,15 @@
 // libraries
 import { useLocation } from "react-router-dom"
 
+// stores
+import { useAuthStore } from "../stores"
+
 // features
 import { LoginForm, RegisterForm } from "../features/Authentication"
 
 export default function AuthenticationView() {
     const location = useLocation()
+    const { is_error, message } = useAuthStore()
 
     return (
         <main className="w-full min-h-screen p-4 flex flex-col justify-center items-center gap-2 bg-white">
@@ -20,6 +24,21 @@ export default function AuthenticationView() {
                     </h2>
                 </div>
             </div>
+
+            {message && (
+                <>
+                    {is_error && (
+                        <div className="w-full max-w-xl h-10 px-2 border rounded-sm flex items-center border-red-300 bg-red-500 text-white">
+                            {message}
+                        </div>
+                    )}
+                    {!is_error && (
+                        <div className="w-full max-w-xl h-10 px-2 border rounded-sm flex items-center border-green-300 bg-green-500 text-white">
+                            {message}
+                        </div>
+                    )}
+                </>
+            )}
 
             <div className="w-full max-w-xl p-4 border rounded-sm border-slate-300 bg-white">
                 {(location.pathname === "/" || location.pathname === "/login") && <LoginForm />}
