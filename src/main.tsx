@@ -19,19 +19,17 @@ import {
 
 // routing
 const router = createBrowserRouter([
-	{ path: "/", element: <AuthenticationView /> },
-	{ path: "/login", element: <AuthenticationView /> },
-	{ path: "/create-account", element: <AuthenticationView /> },
+	// halaman guest → publicOnly
+	{ path: "/", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
+	{ path: "/login", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
+	{ path: "/create-account", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
 
-	// dashboard hanya bisa diakses user login
+	// dashboard → hanya user login
 	{ path: "/dashboard", element: <AuthGuard><DashboardView /></AuthGuard> },
 	{ path: "/dashboard/analytics", element: <AuthGuard><DashboardView /></AuthGuard> },
-	{
-		path: "/dashboard/scanner",
-		element: <AuthGuard allowedRoles={['operator']}><DashboardView /></AuthGuard>
-	},
+	{ path: "/dashboard/scanner", element: <AuthGuard allowedRoles={['operator']}><DashboardView /></AuthGuard> },
 
-	// history, account juga harus login
+	// history & account → hanya user login
 	{ path: "/history", element: <AuthGuard><HistoryView /></AuthGuard> },
 	{ path: "/history/:id", element: <AuthGuard><HistoryView /></AuthGuard> },
 	{ path: "/account", element: <AuthGuard><AccountView /></AuthGuard> },
