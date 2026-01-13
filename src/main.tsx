@@ -23,6 +23,7 @@ const router = createBrowserRouter([
 	
 	{ path: "/dashboard", element: <DashboardView /> },
 	{ path: "/dashboard/analytics", element: <DashboardView /> },
+	{ path: "/dashboard/scanner", element: <DashboardView /> },
 	{ path: "/history", element: <HistoryView /> },
 	{ path: "/history/:id", element: <HistoryView /> },
 	{ path: "/account", element: <AccountView /> },

@@ -4,11 +4,13 @@ import { Link, useLocation } from "react-router-dom"
 // icons
 import { FaHome } from "react-icons/fa";
 import { IoMdAnalytics } from "react-icons/io";
+import { BsQrCodeScan } from "react-icons/bs";
 
 export default function TabDashboard() {
     return (
         <div className="w-full p-4 flex items-center gap-2">
             <Item href="/dashboard" icon={<FaHome className="w-6 h-6" />} title="Antrian" />
+            <Item href="/dashboard/scanner" icon={<BsQrCodeScan className="w-6 h-6" />} title="Scan QR" />
             <Item href="/dashboard/analytics" icon={<IoMdAnalytics className="w-6 h-6" />} title="Analisis" />
         </div>
     )
