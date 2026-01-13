@@ -9,28 +9,26 @@ import { useAuthStore } from "../../stores"
 import { FormControl, TextField, Button } from "../../components"
 
 // icons
-import { FaUser, FaLock } from "react-icons/fa";
+import { FaLock } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
 
 // form for login
 export default function LoginForm() {
-    const { username, password, setField, is_loading, login } = useAuthStore()
+    const { email, password, setField, is_loading, login } = useAuthStore()
 
     return (
         <FormControl onSubmit={login}>
             <TextField
-                type="text" required={true} id="username" label="username" icon={<FaUser className="w-4 h-4" />} loading={is_loading}
-                placeholder="your username"
+                type="text" required={true} id="email" label="e-mail" icon={<MdEmail className="w-4 h-4" />} loading={is_loading}
                 schema={z
-                    .string()
-                    .min(3, { message: "username must be at least 3 characters long" })}
+                    .email()}
                 controller={{
-                    value: username,
-                    onChange: (e) => setField('username', e.target.value)
+                    value: email,
+                    onChange: (e) => setField('email', e.target.value)
                 }}
             />
             <TextField
                 type="password" required={true} id="password" label="password" icon={<FaLock className="w-4 h-4" />} loading={is_loading}
-                placeholder="*********"
                 schema={z
                     .string()
                     .min(3, { message: "password must be at least 3 characters long" })}
