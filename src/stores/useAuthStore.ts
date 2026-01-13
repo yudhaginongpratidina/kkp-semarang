@@ -27,6 +27,7 @@ type AuthAction = {
     reset: () => void
     login: (e?: React.FormEvent) => Promise<void>
     register: (e?: React.FormEvent) => Promise<void>
+    get_account: () => Promise<void>
     logout: () => Promise<void>
 }
 
@@ -166,7 +167,34 @@ const useAuthStore = create<AuthState & AuthAction>()(
                 } finally {
                     set({ is_loading: false })
                 }
+            },
+
+            // get account
+            get_account: async () => {
+                const { user, setField } = get()
+
+                try {
+                    if (!user.id) {
+                        throw new Error("User not logged in")
+                    }
+
+                    const userDoc = await getDoc(doc(db, "officers", user.id))
+                    if (userDoc.exists()) {
+                        const data = userDoc.data()
+                        setField("full_name", data.full_name || "")
+                        setField("nip", data.nip || "")
+                    } else {
+                        throw new Error("User data not found in Firestore")
+                    }
+                } catch (error) {
+                    console.error("Get account error:", error)
+                    if (error instanceof Error) {
+                        set({ is_error: true, message: error.message })
+                        setTimeout(() => set({ is_error: false, message: '' }), 3000)
+                    }
+                }
             }
+
 
         }),
         {
