@@ -1,7 +1,16 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaWhatsapp, FaEye, FaBuilding, FaBriefcase, FaSearch } from "react-icons/fa";
 
+import { useHistoryStore } from "../../stores";
+
 export default function TableHistory() {
+    const { data, get_data } = useHistoryStore();
+
+    useEffect(() => {
+        get_data();
+    }, []);
+
     return (
         <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 p-4">
             <div className="w-full">
@@ -35,41 +44,16 @@ export default function TableHistory() {
                                 </tr>
                             </thead>
                             <tbody>
-                                <ItemData
-                                    id="1"
-                                    full_name="Ahmad Santoso"
-                                    position="Software Engineer"
-                                    company="PT. Gojek Indonesia"
-                                    phone="08123456789"
-                                />
-                                <ItemData
-                                    id="2"
-                                    full_name="Siti Nurhaliza"
-                                    position="Product Manager"
-                                    company="PT. Tokopedia"
-                                    phone="08234567890"
-                                />
-                                <ItemData
-                                    id="3"
-                                    full_name="Budi Prasetyo"
-                                    position="UI/UX Designer"
-                                    company="PT. Bukalapak"
-                                    phone="08345678901"
-                                />
-                                <ItemData
-                                    id="4"
-                                    full_name="Dewi Lestari"
-                                    position="Data Scientist"
-                                    company="PT. Traveloka"
-                                    phone="08456789012"
-                                />
-                                <ItemData
-                                    id="5"
-                                    full_name="Rudi Hermawan"
-                                    position="Backend Developer"
-                                    company="PT. Shopee Indonesia"
-                                    phone="08567890123"
-                                />
+                               {data.map((item, index) => (
+                                   <ItemData
+                                       key={index}
+                                       id={item.uid}
+                                       full_name={item.nama}
+                                       position="Direktur"
+                                       company="PT Mencari Cinta"
+                                       phone={item.nomorHp}
+                                   />
+                               ))}
                             </tbody>
                         </table>
                     </div>
@@ -104,7 +88,7 @@ export default function TableHistory() {
     )
 }
 
-const ItemData = ({ id, full_name, position, company, phone }: {id:string, full_name: string, position: string, company: string, phone: string }) => {
+const ItemData = ({ id, full_name, position, company, phone }: { id: string, full_name: string, position: string, company: string, phone: string }) => {
     const initial = full_name.charAt(0).toUpperCase();
     const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500'];
     const colorIndex = full_name.charCodeAt(0) % colors.length;
