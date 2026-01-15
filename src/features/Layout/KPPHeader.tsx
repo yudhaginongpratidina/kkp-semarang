@@ -9,6 +9,7 @@ export default function KPPHeader() {
             {location.pathname === "/dashboard" && <h1 className="text-white text-lg font-bold uppercase">dashboard</h1>}
             {location.pathname === "/history" && <h1 className="text-white text-lg font-bold uppercase">history</h1>}
             {location.pathname === "/account" && <h1 className="text-white text-lg font-bold uppercase">account</h1>}
+            {location.pathname === "/role-management" && <h1 className="text-white text-lg font-bold uppercase">role management</h1>}
         </header>
     )
 }
