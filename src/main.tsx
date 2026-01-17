@@ -15,7 +15,8 @@ import {
 	DashboardView,
 	HistoryView,
 	AccountView,
-	RoleManagementView
+	RoleManagementView,
+	TraderManagementView
 } from './views'
 
 // routing
@@ -33,6 +34,9 @@ const router = createBrowserRouter([
 	{ path: "/history", element: <AuthGuard><HistoryView /></AuthGuard> },
 	{ path: "/history/:id", element: <AuthGuard><HistoryView /></AuthGuard> },
 	{ path: "/account", element: <AuthGuard><AccountView /></AuthGuard> },
+
+	// trader management → hanya admin
+	{ path: "/traders-management", element: <AuthGuard><TraderManagementView /></AuthGuard> },
 
 	// role management → hanya admin
 	{ path: "/role-management", element: <AuthGuard><RoleManagementView /></AuthGuard> },

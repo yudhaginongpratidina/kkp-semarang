@@ -5,7 +5,7 @@ import { Link, useLocation } from "react-router-dom"
 import { useAuthStore } from "../../stores";
 
 // icons
-import { FaHome, FaHistory, FaUser, FaUserCog } from "react-icons/fa";
+import { FaHome, FaHistory, FaUser, FaUserCog, FaUserSecret } from "react-icons/fa";
 import { IoLogOut } from "react-icons/io5";
 
 export default function KPPSidebar() {
@@ -35,6 +35,13 @@ export default function KPPSidebar() {
                         href="/role-management"
                         icon={<FaUserCog className="w-5 h-5" />}
                         title="role management"
+                    />
+                )}
+                {(user.role === "customer_service" || user.role === "superuser") && (
+                    <Item
+                        href="/traders-management"
+                        icon={<FaUserSecret className="w-5 h-5" />}
+                        title="traders management"
                     />
                 )}
                 <Item
