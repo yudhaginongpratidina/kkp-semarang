@@ -1,15 +1,6 @@
 import { useEffect } from "react"
 import { FaUsers, FaCheckCircle, FaClock, FaSpinner } from "react-icons/fa"
-import { useQueueStore } from "../../stores"
-
-// =====================
-// TYPE ROLE
-// =====================
-type UserRole =
-    | "superuser"
-    | "operator"
-    | "laboratorium"
-    | "customer service"
+import { useQueueStore, useAuthStore } from "../../stores"
 
 // =====================
 // COMPONENT
@@ -25,8 +16,9 @@ export default function StatisticsDashboard() {
         getLaboratorium,
         getCustomerService
     } = useQueueStore()
+    const { user } = useAuthStore()
 
-    const role = "superuser" as UserRole
+    const role = user.role
 
     useEffect(() => {
         if (role === "superuser" || role === "operator") {
@@ -35,7 +27,7 @@ export default function StatisticsDashboard() {
         if (role === "superuser" || role === "laboratorium") {
             getLaboratorium()
         }
-        if (role === "superuser" || role === "customer service") {
+        if (role === "superuser" || role === "customer_service") {
             getCustomerService()
         }
     }, [role, getSMKHP, getLaboratorium, getCustomerService])
@@ -148,7 +140,7 @@ export default function StatisticsDashboard() {
                 </>
             )
         }
-        if (role === "customer service") {
+        if (role === "customer_service") {
             return (
                 <>
                     <SingleStat 

@@ -10,7 +10,7 @@ const ROLE_OPTIONS = [
     "operator",
     "customer_service",
     "laboratorium",
-    "super_admin"
+    "superuser"
 ]
 
 // role badges
@@ -18,7 +18,7 @@ const ROLE_BADGES: Record<string, string> = {
     operator: "bg-blue-100 text-blue-800",
     customer_service: "bg-green-100 text-green-800",
     laboratorium: "bg-purple-100 text-purple-800",
-    super_admin: "bg-red-100 text-red-800"
+    superuser: "bg-red-100 text-red-800"
 }
 
 export default function RoleTable() {

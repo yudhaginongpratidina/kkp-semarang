@@ -9,7 +9,7 @@ import { FaHome, FaHistory, FaUser, FaUserCog } from "react-icons/fa";
 import { IoLogOut } from "react-icons/io5";
 
 export default function KPPSidebar() {
-    const { logout } = useAuthStore()
+    const { logout, user } = useAuthStore()
 
     return (
         <aside className="w-20 md:w-full md:max-w-xs min-h-screen bg-white">
@@ -30,11 +30,13 @@ export default function KPPSidebar() {
                     icon={<FaHistory className="w-5 h-5" />}
                     title="history"
                 />
-                <Item
-                    href="/role-management"
-                    icon={<FaUserCog className="w-5 h-5" />}
-                    title="role management"
-                />
+                {user.role === "superuser" && (
+                    <Item
+                        href="/role-management"
+                        icon={<FaUserCog className="w-5 h-5" />}
+                        title="role management"
+                    />
+                )}
                 <Item
                     href="/account"
                     icon={<FaUser className="w-5 h-5" />}

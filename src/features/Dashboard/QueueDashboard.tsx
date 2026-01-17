@@ -1,119 +1,176 @@
-import { useState, useEffect } from "react";
-import { FaEye, FaCheck, FaMobileAlt, FaFlask, FaHeadset, FaClock } from "react-icons/fa";
-import { HiUsers } from "react-icons/hi";
+import { useEffect, useState } from "react"
+import {
+    FaEye,
+    FaCheck,
+    FaMobileAlt,
+    FaFlask,
+    FaHeadset,
+    FaClock
+} from "react-icons/fa"
+import { HiUsers } from "react-icons/hi"
+import { useQueueStore, useAuthStore } from "../../stores"
 
-import { useQueueStore } from "../../stores";
+/* ================= TYPE ================= */
+type StatusFilter = "all" | "menunggu" | "diproses"
 
+/* ================= COMPONENT ================= */
 export default function QueueDashboard() {
-    const [tab_active, setTabActive] = useState<string>("smkhp");
-    const handleChangeTab = (tab: string) => setTabActive(tab);
+    const [tabActive, setTabActive] = useState("smkhp")
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
-    const { smkhp, laboratorium, customer_service, getSMKHP, getLaboratorium, getCustomerService } = useQueueStore()
+    const {
+        smkhp,
+        laboratorium,
+        customer_service,
+        getSMKHP,
+        getLaboratorium,
+        getCustomerService
+    } = useQueueStore()
+    const { user } = useAuthStore()
 
+    /* ================= FETCH ================= */
     useEffect(() => {
-        if (tab_active === "smkhp") {
-            getSMKHP()
-        } else if (tab_active === "laboratorium") {
-            getLaboratorium()
-        } else if (tab_active === "customer_service") {
-            getCustomerService()
-        }
-    }, [tab_active])
+        getSMKHP()
+        getLaboratorium()
+        getCustomerService()
+    }, [])
 
+    /* ================= HELPER ================= */
+    const filterByStatus = <T extends { subStatus: string }>(data: T[]) => {
+        if (statusFilter === "all") return data
+        return data.filter(
+            i => i.subStatus.toLowerCase() === statusFilter
+        )
+    }
+
+    const countByStatus = (data: any[]) => ({
+        total: data.length,
+        menunggu: data.filter(i => i.subStatus?.toLowerCase() === "menunggu").length,
+        diproses: data.filter(i => i.subStatus?.toLowerCase() === "diproses").length
+    })
+
+    const activeData =
+        tabActive === "smkhp"
+            ? smkhp
+            : tabActive === "laboratorium"
+                ? laboratorium
+                : customer_service
+
+    const stat = countByStatus(activeData)
+
+    /* ================= UI ================= */
     return (
         <div className="w-full p-4">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="bg-linear-to-r from-blue-600 to-blue-500 p-4">
-                        <div className="flex items-center gap-2 text-white">
-                            <HiUsers className="w-5 h-5" />
-                            <h2 className="text-lg font-semibold">ANTRIAN AKTIF</h2>
-                        </div>
+
+                {/* ================= LEFT ================= */}
+                <div className="bg-white rounded-sm border shadow-sm">
+                    <div className="bg-blue-600 p-4 text-white flex items-center gap-2">
+                        <HiUsers />
+                        <h2 className="font-semibold">ANTRIAN AKTIF</h2>
                     </div>
+
                     <div className="p-4 space-y-3">
-                        <TriggerButton
-                            id={"smkhp"}
-                            title="SMKHP"
-                            icon={<FaMobileAlt className="w-4 h-4" />}
-                            count={smkhp.length}
-                            onClick={() => handleChangeTab("smkhp")}
-                            activeTab={tab_active}
-                            color="blue"
-                        />
-                        <TriggerButton
-                            id={"laboratorium"}
-                            title="Laboratorium"
-                            icon={<FaFlask className="w-4 h-4" />}
-                            count={laboratorium.length}
-                            onClick={() => handleChangeTab("laboratorium")}
-                            activeTab={tab_active}
-                            color="purple"
-                        />
-                        <TriggerButton
-                            id={"customer-service"}
-                            title="Customer Service"
-                            icon={<FaHeadset className="w-4 h-4" />}
-                            count={customer_service.length}
-                            onClick={() => handleChangeTab("customer-service")}
-                            activeTab={tab_active}
-                            color="green"
-                        />
+                        {(user.role === "superuser" || user.role === "operator") && (
+                            <TriggerButton
+                                id="smkhp"
+                                title="SMKHP"
+                                count={smkhp.length}
+                                activeTab={tabActive}
+                                onClick={() => setTabActive("smkhp")}
+                                color="blue"
+                                icon={<FaMobileAlt />}
+                            />
+                        )}
+
+                        {(user.role === "superuser" || user.role === "laboratorium") && (
+                            <TriggerButton
+                                id="laboratorium"
+                                title="Laboratorium"
+                                count={laboratorium.length}
+                                activeTab={tabActive}
+                                onClick={() => setTabActive("laboratorium")}
+                                color="purple"
+                                icon={<FaFlask />}
+                            />
+                        )}
+
+                        {(user.role === "superuser" || user.role === "customer_service") && (
+                            <TriggerButton
+                                id="customer_service"
+                                title="Customer Service"
+                                count={customer_service.length}
+                                activeTab={tabActive}
+                                onClick={() => setTabActive("customer_service")}
+                                color="green"
+                                icon={<FaHeadset />}
+                            />
+                        )}
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="bg-linear-to-r from-slate-700 to-slate-600 p-4">
-                        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                            <FaClock className="w-5 h-5" />
-                            DAFTAR ANTRIAN
-                        </h2>
+                {/* ================= RIGHT ================= */}
+                <div className="lg:col-span-2 bg-white rounded-sm border shadow-sm">
+                    <div className="bg-slate-700 p-4 text-white flex items-center gap-2">
+                        <FaClock />
+                        <h2 className="font-semibold">DAFTAR ANTRIAN</h2>
                     </div>
-                    <div className="p-4 space-y-3 max-h-150 overflow-y-auto">
-                        {tab_active === "smkhp" &&
-                            smkhp.map((item) => (
-                                <ItemQueue
-                                    key={item.token}
-                                    queue={item.queueNo}
-                                    name={item.userName}
-                                    phone={item.nomorHp}
-                                    service_type={item.type}
-                                    status={item.subStatus}
-                                    time={"--"}
-                                />
-                            ))
-                        }
-                        {tab_active === "laboratorium" &&
-                            laboratorium.map((item) => (
-                                <ItemQueue
-                                    key={item.token}
-                                    queue={item.queueNo}
-                                    name={item.userName}
-                                    phone={item.nomorHp}
-                                    service_type={item.type}
-                                    status={item.subStatus}
-                                    time={"--"}
-                                />
-                            ))
-                        }
-                        {tab_active === "customer-service" &&
-                            customer_service.map((item) => (
-                                <ItemQueue
-                                    key={item.token}
-                                    queue={item.queueNo}
-                                    name={item.userName}
-                                    phone={item.nomorHp}
-                                    service_type={item.type}
-                                    status={item.subStatus}
-                                    time={"--"}
-                                />
-                            ))
-                        }
+
+                    {/* FILTER */}
+                    <div className="flex gap-2 p-4 flex-wrap">
+                        <FilterButton
+                            label="Semua"
+                            active={statusFilter === "all"}
+                            onClick={() => setStatusFilter("all")}
+                            total={stat.total}
+                        />
+                        <FilterButton
+                            label="Menunggu"
+                            active={statusFilter === "menunggu"}
+                            onClick={() => setStatusFilter("menunggu")}
+                            total={stat.menunggu}
+                        />
+                        <FilterButton
+                            label="Diproses"
+                            active={statusFilter === "diproses"}
+                            onClick={() => setStatusFilter("diproses")}
+                            total={stat.diproses}
+                        />
+                    </div>
+
+                    {/* LIST */}
+                    <div className="p-4 space-y-3 max-h-125 overflow-y-auto">
+                        {filterByStatus(activeData).map(item => (
+                            <ItemQueue
+                                key={item.token}
+                                queue={item.queueNo}
+                                name={item.userName}
+                                phone={item.nomorHp}
+                                service_type={item.type}
+                                status={item.subStatus}
+                                time=""
+                            />
+                        ))}
                     </div>
                 </div>
             </div>
         </div>
     )
 }
+
+const FilterButton = ({ label, active, onClick, total }: any) => (
+    <button
+        onClick={onClick}
+        className={`px-4 py-1.5 rounded text-sm font-semibold border
+        ${active
+                ? "bg-slate-700 text-white"
+                : "bg-white text-slate-600 hover:bg-slate-100"}`}
+    >
+        {label}
+        <span className="ml-2 text-xs font-bold">({total})</span>
+    </button>
+)
+
 
 const TriggerButton = ({
     id,
