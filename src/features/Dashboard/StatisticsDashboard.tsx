@@ -1,258 +1,304 @@
-import { FaTicketAlt } from "react-icons/fa";
-import { MdOutlineMonitorHeart, MdSupportAgent } from "react-icons/md";
-import { IoMdDocument } from "react-icons/io";
-import { ImLab } from "react-icons/im";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { IoCheckmarkDoneCircleSharp } from "react-icons/io5";
+import { useEffect } from "react"
+import { FaUsers, FaCheckCircle, FaClock, FaSpinner } from "react-icons/fa"
+import { useQueueStore } from "../../stores"
 
+// =====================
+// TYPE ROLE
+// =====================
+type UserRole =
+    | "superuser"
+    | "operator"
+    | "laboratorium"
+    | "customer service"
+
+// =====================
+// COMPONENT
+// =====================
 export default function StatisticsDashboard() {
+    const {
+        smkhp,
+        laboratorium,
+        customer_service,
+        isLoading,
+        error,
+        getSMKHP,
+        getLaboratorium,
+        getCustomerService
+    } = useQueueStore()
+
+    const role = "superuser" as UserRole
+
+    useEffect(() => {
+        if (role === "superuser" || role === "operator") {
+            getSMKHP()
+        }
+        if (role === "superuser" || role === "laboratorium") {
+            getLaboratorium()
+        }
+        if (role === "superuser" || role === "customer service") {
+            getCustomerService()
+        }
+    }, [role, getSMKHP, getLaboratorium, getCustomerService])
+
+    // =====================
+    // HITUNG STATUS
+    // =====================
+    const countStatus = (data: any[]) => {
+        const active = data.filter(d => d.status?.toLowerCase() === "active")
+        return {
+            total: active.length,
+            menunggu: active.filter(
+                d => d.subStatus?.toLowerCase() === "menunggu"
+            ).length,
+            diproses: active.filter(
+                d => d.subStatus?.toLowerCase() === "diproses"
+            ).length
+        }
+    }
+
+    const smkhpStat = countStatus(smkhp)
+    const labStat = countStatus(laboratorium)
+    const csStat = countStatus(customer_service)
+
+    // =====================
+    // RENDER BY ROLE
+    // =====================
+    const renderCards = () => {
+        if (role === "superuser") {
+            return (
+                <>
+                    <StatCard 
+                        title="SMKHP" 
+                        data={smkhpStat} 
+                        gradientFrom="from-blue-500" 
+                        gradientTo="to-blue-700"
+                    />
+                    <StatCard 
+                        title="Laboratorium" 
+                        data={labStat} 
+                        gradientFrom="from-green-500" 
+                        gradientTo="to-green-700"
+                    />
+                    <StatCard 
+                        title="Customer Service" 
+                        data={csStat} 
+                        gradientFrom="from-purple-500" 
+                        gradientTo="to-purple-700"
+                    />
+                </>
+            )
+        }
+        if (role === "operator") {
+            return (
+                <>
+                    <SingleStat 
+                        title="Total Antrian" 
+                        subtitle="SMKHP"
+                        value={smkhpStat.total} 
+                        icon={<FaUsers className="text-3xl" />}
+                        gradientFrom="from-blue-500" 
+                        gradientTo="to-blue-600"
+                    />
+                    <SingleStat 
+                        title="Menunggu" 
+                        subtitle="SMKHP"
+                        value={smkhpStat.menunggu} 
+                        icon={<FaClock className="text-3xl" />}
+                        gradientFrom="from-amber-500" 
+                        gradientTo="to-orange-600"
+                    />
+                    <SingleStat 
+                        title="Diproses" 
+                        subtitle="SMKHP"
+                        value={smkhpStat.diproses} 
+                        icon={<FaSpinner className="text-3xl" />}
+                        gradientFrom="from-emerald-500" 
+                        gradientTo="to-teal-600"
+                    />
+                </>
+            )
+        }
+        if (role === "laboratorium") {
+            return (
+                <>
+                    <SingleStat 
+                        title="Total Antrian" 
+                        subtitle="Laboratorium"
+                        value={labStat.total} 
+                        icon={<FaUsers className="text-3xl" />}
+                        gradientFrom="from-green-500" 
+                        gradientTo="to-green-600"
+                    />
+                    <SingleStat 
+                        title="Menunggu" 
+                        subtitle="Laboratorium"
+                        value={labStat.menunggu} 
+                        icon={<FaClock className="text-3xl" />}
+                        gradientFrom="from-amber-500" 
+                        gradientTo="to-orange-600"
+                    />
+                    <SingleStat 
+                        title="Diproses" 
+                        subtitle="Laboratorium"
+                        value={labStat.diproses} 
+                        icon={<FaSpinner className="text-3xl" />}
+                        gradientFrom="from-emerald-500" 
+                        gradientTo="to-teal-600"
+                    />
+                </>
+            )
+        }
+        if (role === "customer service") {
+            return (
+                <>
+                    <SingleStat 
+                        title="Total Antrian" 
+                        subtitle="Customer Service"
+                        value={csStat.total} 
+                        icon={<FaUsers className="text-3xl" />}
+                        gradientFrom="from-purple-500" 
+                        gradientTo="to-purple-600"
+                    />
+                    <SingleStat 
+                        title="Menunggu" 
+                        subtitle="Customer Service"
+                        value={csStat.menunggu} 
+                        icon={<FaClock className="text-3xl" />}
+                        gradientFrom="from-amber-500" 
+                        gradientTo="to-orange-600"
+                    />
+                    <SingleStat 
+                        title="Diproses" 
+                        subtitle="Customer Service"
+                        value={csStat.diproses} 
+                        icon={<FaSpinner className="text-3xl" />}
+                        gradientFrom="from-emerald-500" 
+                        gradientTo="to-teal-600"
+                    />
+                </>
+            )
+        }
+        return null
+    }
+
     return (
-        <div className="bg-linear-to-br from-slate-50 to-slate-100 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-6">
-                <TotalQueue role="super" />
-                <WaitingQueue role="super" />
-                <ActiveQueue role="super" />
-                <ComplateQueue role="super" />
+        <div className="p-4 space-y-6 bg-gray-50">
+
+            {isLoading && (
+                <div className="flex items-center gap-2 text-gray-600">
+                    <FaSpinner className="animate-spin" />
+                    <p>Memuat data...</p>
+                </div>
+            )}
+            {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
+                    {error}
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {renderCards()}
             </div>
         </div>
     )
 }
 
-const TotalQueue = ({ role }: { role: string }) => {
+// =====================
+// COMPONENT CARD
+// =====================
+type StatCardProps = {
+    title: string
+    data: {
+        total: number
+        menunggu: number
+        diproses: number
+    }
+    gradientFrom: string
+    gradientTo: string
+}
+
+function StatCard({ title, data, gradientFrom, gradientTo }: StatCardProps) {
     return (
-        <div className="group relative overflow-hidden bg-white border border-slate-200 rounded-sm shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full -mr-16 -mt-16 opacity-10 group-hover:opacity-20 transition-opacity" />
-            {role !== 'op-admin' && (
-                <div className="p-6 relative z-10">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-blue-100 rounded-sm">
-                                <FaTicketAlt className="w-6 h-6 text-blue-600" />
-                            </div>
-                            <h1 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Total Antrian</h1>
-                        </div>
-                    </div>
-                    <div className="w-full h-1 bg-linear-to-r from-blue-500 to-blue-300 rounded-sm mb-4" />
-                    <div className="flex items-end justify-between">
-                        <h1 className="text-5xl font-bold text-slate-800">10</h1>
-                        <span className="text-sm text-green-600 font-medium">+12%</span>
+        <div className={`bg-linear-to-br ${gradientFrom} ${gradientTo} rounded-sm shadow-lg hover:shadow-xl transition-shadow duration-300`}>
+            <div className="p-6 text-white">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold">{title}</h2>
+                    <div className="bg-black/20 p-3 rounded-sm">
+                        <FaCheckCircle className="text-2xl" />
                     </div>
                 </div>
-            )}
-            {role === 'op-admin' && (
-                <div className="p-6 relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-blue-100 rounded-sm">
-                            <FaTicketAlt className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <h1 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Total Antrian</h1>
-                    </div>
-                    <div className="w-full h-1 bg-linear-to-r from-blue-500 to-blue-300 rounded-sm mb-4" />
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <IoMdDocument className="w-5 h-5 text-blue-500" />
-                                <span className="text-sm font-medium text-slate-700">SMKHP</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <ImLab className="w-5 h-5 text-purple-500" />
-                                <span className="text-sm font-medium text-slate-700">LAB</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <MdSupportAgent className="w-5 h-5 text-green-500" />
-                                <span className="text-sm font-medium text-slate-700">CS</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                    </div>
+                
+                <div className="space-y-4">
+                    <StatRow 
+                        icon={<FaUsers className="text-xl" />} 
+                        label="Total Active" 
+                        value={data.total} 
+                    />
+                    <div className="border-t border-white border-opacity-20"></div>
+                    <StatRow 
+                        icon={<FaClock className="text-xl" />} 
+                        label="Menunggu" 
+                        value={data.menunggu} 
+                    />
+                    <div className="border-t border-white border-opacity-20"></div>
+                    <StatRow 
+                        icon={<FaSpinner className="text-xl" />} 
+                        label="Diproses" 
+                        value={data.diproses} 
+                    />
                 </div>
-            )}
+            </div>
         </div>
     )
 }
 
-const WaitingQueue = ({ role }: { role: string }) => {
+function SingleStat({
+    title,
+    subtitle,
+    value,
+    icon,
+    gradientFrom,
+    gradientTo
+}: {
+    title: string
+    subtitle: string
+    value: number
+    icon: React.ReactNode
+    gradientFrom: string
+    gradientTo: string
+}) {
     return (
-        <div className="group relative overflow-hidden bg-white border border-slate-200 rounded-sm shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full -mr-16 -mt-16 opacity-10 group-hover:opacity-20 transition-opacity" />
-            {role !== 'op-admin' && (
-                <div className="p-6 relative z-10">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-amber-100 rounded-sm">
-                                <AiOutlineLoading3Quarters className="w-6 h-6 text-amber-600 animate-spin" style={{ animationDuration: '3s' }} />
-                            </div>
-                            <h1 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Antrian Menunggu</h1>
-                        </div>
+        <div className={`bg-linear-to-br ${gradientFrom} ${gradientTo} rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}>
+            <div className="p-6 text-white">
+                <div className="flex items-start justify-between mb-4">
+                    <div>
+                        <p className="text-sm font-medium opacity-90">{subtitle}</p>
+                        <h3 className="text-lg font-bold mt-1">{title}</h3>
                     </div>
-                    <div className="w-full h-1 bg-linear-to-r from-amber-500 to-amber-300 rounded-sm mb-4" />
-                    <div className="flex items-end justify-between">
-                        <h1 className="text-5xl font-bold text-slate-800">10</h1>
-                        <span className="text-sm text-amber-600 font-medium">Pending</span>
+                    <div className="bg-black/45 p-3 rounded-sm">
+                        {icon}
                     </div>
                 </div>
-            )}
-            {role === 'op-admin' && (
-                <div className="p-6 relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-amber-100 rounded-sm">
-                            <AiOutlineLoading3Quarters className="w-5 h-5 text-amber-600" />
-                        </div>
-                        <h1 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Antrian Menunggu</h1>
-                    </div>
-                    <div className="w-full h-1 bg-linear-to-r from-amber-500 to-amber-300 rounded-sm mb-4" />
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <IoMdDocument className="w-5 h-5 text-blue-500" />
-                                <span className="text-sm font-medium text-slate-700">SMKHP</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <ImLab className="w-5 h-5 text-purple-500" />
-                                <span className="text-sm font-medium text-slate-700">LAB</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <MdSupportAgent className="w-5 h-5 text-green-500" />
-                                <span className="text-sm font-medium text-slate-700">CS</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                    </div>
+                
+                <div className="mt-6">
+                    <p className="text-5xl font-bold tracking-tight">{value}</p>
+                    <p className="text-sm opacity-75 mt-2">antrian aktif</p>
                 </div>
-            )}
+            </div>
         </div>
     )
 }
 
-const ActiveQueue = ({ role }: { role: string }) => {
+function StatRow({ icon, label, value }: { icon: React.ReactNode, label: string, value: number }) {
     return (
-        <div className="group relative overflow-hidden bg-white border border-slate-200 rounded-sm shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500 rounded-full -mr-16 -mt-16 opacity-10 group-hover:opacity-20 transition-opacity" />
-            {role !== 'op-admin' && (
-                <div className="p-6 relative z-10">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-emerald-100 rounded-sm">
-                                <MdOutlineMonitorHeart className="w-6 h-6 text-emerald-600" />
-                            </div>
-                            <h1 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Antrian Aktif</h1>
-                        </div>
-                    </div>
-                    <div className="w-full h-1 bg-linear-to-r from-emerald-500 to-emerald-300 rounded-sm mb-4" />
-                    <div className="flex items-end justify-between">
-                        <h1 className="text-5xl font-bold text-slate-800">10</h1>
-                        <span className="text-sm text-emerald-600 font-medium flex items-center gap-1">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                            Active
-                        </span>
-                    </div>
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className="bg-black/20 p-2 rounded-sm">
+                    {icon}
                 </div>
-            )}
-            {role === 'op-admin' && (
-                <div className="p-6 relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-emerald-100 rounded-sm">
-                            <MdOutlineMonitorHeart className="w-5 h-5 text-emerald-600" />
-                        </div>
-                        <h1 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Antrian Aktif</h1>
-                    </div>
-                    <div className="w-full h-1 bg-linear-to-r from-emerald-500 to-emerald-300 rounded-sm mb-4" />
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <IoMdDocument className="w-5 h-5 text-blue-500" />
-                                <span className="text-sm font-medium text-slate-700">SMKHP</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <ImLab className="w-5 h-5 text-purple-500" />
-                                <span className="text-sm font-medium text-slate-700">LAB</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <MdSupportAgent className="w-5 h-5 text-green-500" />
-                                <span className="text-sm font-medium text-slate-700">CS</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    )
-}
-
-const ComplateQueue = ({ role }: { role: string }) => {
-    return (
-        <div className="group relative overflow-hidden bg-white border border-slate-200 rounded-sm shadow-sm hover:shadow-lg transition-all duration-300">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full -mr-16 -mt-16 opacity-10 group-hover:opacity-20 transition-opacity" />
-            {role !== 'op-admin' && (
-                <div className="p-6 relative z-10">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-indigo-100 rounded-sm">
-                                <IoCheckmarkDoneCircleSharp className="w-6 h-6 text-indigo-600" />
-                            </div>
-                            <h1 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Antrian Selesai</h1>
-                        </div>
-                    </div>
-                    <div className="w-full h-1 bg-linear-to-r from-indigo-500 to-indigo-300 rounded-sm mb-4" />
-                    <div className="flex items-end justify-between">
-                        <h1 className="text-5xl font-bold text-slate-800">10</h1>
-                        <span className="text-sm text-indigo-600 font-medium">Completed</span>
-                    </div>
-                </div>
-            )}
-            {role === 'op-admin' && (
-                <div className="p-6 relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-indigo-100 rounded-sm">
-                            <IoCheckmarkDoneCircleSharp className="w-5 h-5 text-indigo-600" />
-                        </div>
-                        <h1 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Antrian Selesai</h1>
-                    </div>
-                    <div className="w-full h-1 bg-linear-to-r from-indigo-500 to-indigo-300 rounded-sm mb-4" />
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <IoMdDocument className="w-5 h-5 text-blue-500" />
-                                <span className="text-sm font-medium text-slate-700">SMKHP</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <ImLab className="w-5 h-5 text-purple-500" />
-                                <span className="text-sm font-medium text-slate-700">LAB</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-sm hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <MdSupportAgent className="w-5 h-5 text-green-500" />
-                                <span className="text-sm font-medium text-slate-700">CS</span>
-                            </div>
-                            <span className="text-lg font-bold text-slate-800">10</span>
-                        </div>
-                    </div>
-                </div>
-            )}
+                <span className="font-medium">{label}</span>
+            </div>
+            <span className="text-2xl font-bold">{value}</span>
         </div>
     )
 }
