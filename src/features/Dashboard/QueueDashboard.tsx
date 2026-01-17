@@ -1,10 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaEye, FaCheck, FaMobileAlt, FaFlask, FaHeadset, FaClock } from "react-icons/fa";
 import { HiUsers } from "react-icons/hi";
+
+import { useQueueStore } from "../../stores";
 
 export default function QueueDashboard() {
     const [tab_active, setTabActive] = useState<string>("smkhp");
     const handleChangeTab = (tab: string) => setTabActive(tab);
+
+    const { smkhp, laboratorium, customer_service, getSMKHP, getLaboratorium, getCustomerService } = useQueueStore()
+
+    useEffect(() => {
+        if (tab_active === "smkhp") {
+            getSMKHP()
+        } else if (tab_active === "laboratorium") {
+            getLaboratorium()
+        } else if (tab_active === "customer_service") {
+            getCustomerService()
+        }
+    }, [tab_active])
 
     return (
         <div className="w-full p-4">
@@ -21,7 +35,7 @@ export default function QueueDashboard() {
                             id={"smkhp"}
                             title="SMKHP"
                             icon={<FaMobileAlt className="w-4 h-4" />}
-                            count={10}
+                            count={smkhp.length}
                             onClick={() => handleChangeTab("smkhp")}
                             activeTab={tab_active}
                             color="blue"
@@ -30,7 +44,7 @@ export default function QueueDashboard() {
                             id={"laboratorium"}
                             title="Laboratorium"
                             icon={<FaFlask className="w-4 h-4" />}
-                            count={10}
+                            count={laboratorium.length}
                             onClick={() => handleChangeTab("laboratorium")}
                             activeTab={tab_active}
                             color="purple"
@@ -39,7 +53,7 @@ export default function QueueDashboard() {
                             id={"customer-service"}
                             title="Customer Service"
                             icon={<FaHeadset className="w-4 h-4" />}
-                            count={10}
+                            count={customer_service.length}
                             onClick={() => handleChangeTab("customer-service")}
                             activeTab={tab_active}
                             color="green"
@@ -55,74 +69,45 @@ export default function QueueDashboard() {
                         </h2>
                     </div>
                     <div className="p-4 space-y-3 max-h-150 overflow-y-auto">
-                        {tab_active === "smkhp" && (
-                            <>
+                        {tab_active === "smkhp" &&
+                            smkhp.map((item) => (
                                 <ItemQueue
-                                    queue={1}
-                                    name="Ahmad Santoso"
-                                    phone="082-123-456-789"
-                                    service_type="SMKHP"
-                                    status="Aktif"
-                                    time="10:30"
+                                    key={item.token}
+                                    queue={item.queueNo}
+                                    name={item.userName}
+                                    phone={item.nomorHp}
+                                    service_type={item.type}
+                                    status={item.subStatus}
+                                    time={"--"}
                                 />
+                            ))
+                        }
+                        {tab_active === "laboratorium" &&
+                            laboratorium.map((item) => (
                                 <ItemQueue
-                                    queue={2}
-                                    name="Siti Nurhaliza"
-                                    phone="082-987-654-321"
-                                    service_type="SMKHP"
-                                    status="Menunggu"
-                                    time="10:45"
+                                    key={item.token}
+                                    queue={item.queueNo}
+                                    name={item.userName}
+                                    phone={item.nomorHp}
+                                    service_type={item.type}
+                                    status={item.subStatus}
+                                    time={"--"}
                                 />
+                            ))
+                        }
+                        {tab_active === "customer-service" &&
+                            customer_service.map((item) => (
                                 <ItemQueue
-                                    queue={3}
-                                    name="Budi Prasetyo"
-                                    phone="082-555-888-999"
-                                    service_type="SMKHP"
-                                    status="Menunggu"
-                                    time="11:00"
+                                    key={item.token}
+                                    queue={item.queueNo}
+                                    name={item.userName}
+                                    phone={item.nomorHp}
+                                    service_type={item.type}
+                                    status={item.subStatus}
+                                    time={"--"}
                                 />
-                            </>
-                        )}
-                        {tab_active === "laboratorium" && (
-                            <>
-                                <ItemQueue
-                                    queue={1}
-                                    name="Dewi Lestari"
-                                    phone="082-111-222-333"
-                                    service_type="Laboratorium"
-                                    status="Aktif"
-                                    time="10:15"
-                                />
-                                <ItemQueue
-                                    queue={2}
-                                    name="Rudi Hermawan"
-                                    phone="082-444-555-666"
-                                    service_type="Laboratorium"
-                                    status="Menunggu"
-                                    time="10:30"
-                                />
-                            </>
-                        )}
-                        {tab_active === "customer-service" && (
-                            <>
-                                <ItemQueue
-                                    queue={1}
-                                    name="Linda Wijaya"
-                                    phone="082-777-888-999"
-                                    service_type="Customer Service"
-                                    status="Aktif"
-                                    time="09:45"
-                                />
-                                <ItemQueue
-                                    queue={2}
-                                    name="Andi Firmansyah"
-                                    phone="082-321-654-987"
-                                    service_type="Customer Service"
-                                    status="Menunggu"
-                                    time="10:00"
-                                />
-                            </>
-                        )}
+                            ))
+                        }
                     </div>
                 </div>
             </div>
@@ -262,6 +247,19 @@ const ItemQueue = ({
         return 'bg-slate-100 text-slate-700 border border-slate-200';
     };
 
+    const formatQueueNumber = (queue: number, type: string) => {
+        let prefix = "A";
+
+        const lower = type.toLowerCase();
+
+        if (lower.includes("laboratorium") || lower.includes("lab")) { prefix = "B"; }
+        else if (lower.includes("customer") || lower.includes("cs")) { prefix = "C"; }
+
+        const padded = queue.toString().padStart(3, "0");
+
+        return `#${prefix}${padded}`;
+    };
+
     return (
         <div className="group relative bg-white border-2 border-slate-200 rounded-sm hover:border-slate-300 hover:shadow-md transition-all duration-200 overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-blue-500 to-blue-600" />
@@ -274,7 +272,7 @@ const ItemQueue = ({
                     <div className="flex flex-col gap-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span className="px-2 py-0.5 bg-slate-700 text-white rounded text-xs font-bold">
-                                #{queue}
+                                {formatQueueNumber(queue, service_type)}
                             </span>
                             <span className="text-sm font-bold text-slate-800 truncate">{name}</span>
                         </div>
