@@ -28,7 +28,6 @@ const router = createBrowserRouter([
 	// dashboard → hanya user login
 	{ path: "/dashboard", element: <AuthGuard><DashboardView /></AuthGuard> },
 	{ path: "/dashboard/analytics", element: <AuthGuard><DashboardView /></AuthGuard> },
-	{ path: "/dashboard/scanner", element: <AuthGuard allowedRoles={['operator']}><DashboardView /></AuthGuard> },
 
 	// history & account → hanya user login
 	{ path: "/history", element: <AuthGuard><HistoryView /></AuthGuard> },

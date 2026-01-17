@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom"
 
 // features
 import { KPPSidebar, KPPHeader, KPPMain } from "../features/Layout"
-import { StatisticsDashboard, TabDashboard, QueueDashboard, AnalyticsDashboard, ScanQRDashboard } from "../features/Dashboard"
+import { StatisticsDashboard, TabDashboard, QueueDashboard, AnalyticsDashboard } from "../features/Dashboard"
 
 export default function DashboardView() {
     const location = useLocation()
@@ -18,7 +18,6 @@ export default function DashboardView() {
 
                 {location.pathname === "/dashboard" && <QueueDashboard />}
                 {location.pathname === "/dashboard/analytics" && <AnalyticsDashboard />}
-                {location.pathname === "/dashboard/scanner" && <ScanQRDashboard />}
             </KPPMain>
         </div>
     )
