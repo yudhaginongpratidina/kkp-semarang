@@ -9,6 +9,7 @@ type Data = {
     uid: string
     nama: string
     nomorHp: string
+    npwp: string
 }
 
 type HistoryState = {
