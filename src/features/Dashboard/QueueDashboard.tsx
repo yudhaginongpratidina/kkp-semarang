@@ -28,11 +28,17 @@ export default function QueueDashboard() {
     } = useQueueStore()
     const { user } = useAuthStore()
 
-    /* ================= FETCH ================= */
+    /* ================= FETCH REALTIME ================= */
     useEffect(() => {
-        getSMKHP()
-        getLaboratorium()
-        getCustomerService()
+        const unsub1 = getSMKHP()
+        const unsub2 = getLaboratorium()
+        const unsub3 = getCustomerService()
+
+        return () => {
+            unsub1()
+            unsub2()
+            unsub3()
+        }
     }, [])
 
     /* ================= HELPER ================= */
@@ -143,6 +149,7 @@ export default function QueueDashboard() {
                         {filterByStatus(activeData).map(item => (
                             <ItemQueue
                                 key={item.token}
+                                token={item.token}
                                 queue={item.queueNo}
                                 name={item.userName}
                                 phone={item.nomorHp}
@@ -240,6 +247,7 @@ const TriggerButton = ({
 }
 
 const ItemQueue = ({
+    token,
     queue,
     name,
     phone,
@@ -247,6 +255,7 @@ const ItemQueue = ({
     status,
     time
 }: {
+    token: string
     queue: number
     name: string
     phone: string
@@ -317,6 +326,25 @@ const ItemQueue = ({
         return `#${prefix}${padded}`;
     };
 
+    // update status
+    const { updateSMKHPStatus, updateLaboratoriumStatus, updateCustomerServiceStatus, getLaboratorium, getSMKHP, getCustomerService } = useQueueStore();
+
+    // handle update status
+    const handleUpdateStatusLaboratorium = async (token: string, newStatus: string) => {
+        await updateLaboratoriumStatus(token, newStatus)
+        await getLaboratorium()
+    }
+
+    const handleUpdateStatusSMKHP = async (token: string, newStatus: string) => {
+        await updateSMKHPStatus(token, newStatus)
+        await getSMKHP()
+    }
+
+    const handleUpdateStatusCustomerService = async (token: string, newStatus: string) => {
+        await updateCustomerServiceStatus(token, newStatus)
+        await getCustomerService()
+    }
+
     return (
         <div className="group relative bg-white border-2 border-slate-200 rounded-sm hover:border-slate-300 hover:shadow-md transition-all duration-200 overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-blue-500 to-blue-600" />
@@ -364,12 +392,39 @@ const ItemQueue = ({
                             <FaEye className="w-4 h-4" />
                         </button>
                     )}
-                    <button
-                        className="w-10 h-10 rounded-sm flex justify-center items-center hover:cursor-pointer bg-green-500 text-white hover:bg-green-600 hover:scale-105 transition-all duration-200 shadow-sm"
-                        title={status.toLocaleLowerCase() === 'menunggu' ? 'Proses' : 'Selesai'}
-                    >
-                        <FaCheck className="w-4 h-4" />
-                    </button>
+
+                    {/* LABORATORIUM STATUS HANDLE */}
+                    {service_type === 'Laboratorium' && (
+                        <button
+                            onClick={() => handleUpdateStatusLaboratorium(token, status.toLocaleLowerCase() === 'menunggu' ? 'Diproses' : 'Selesai')}
+                            className="w-10 h-10 rounded-sm flex justify-center items-center hover:cursor-pointer bg-green-500 text-white hover:bg-green-600 hover:scale-105 transition-all duration-200 shadow-sm"
+                            title={status.toLocaleLowerCase() === 'menunggu' ? 'Proses' : 'Selesai'}
+                        >
+                            <FaCheck className="w-4 h-4" />
+                        </button>
+                    )}
+
+                    {/* SMKHP STATUS HANDLE */}
+                    {service_type === 'SMKHP' && (
+                        <button
+                            onClick={() => handleUpdateStatusSMKHP(token, status.toLocaleLowerCase() === 'menunggu' ? 'Diproses' : 'Selesai')}
+                            className="w-10 h-10 rounded-sm flex justify-center items-center hover:cursor-pointer bg-green-500 text-white hover:bg-green-600 hover:scale-105 transition-all duration-200 shadow-sm"
+                            title={status.toLocaleLowerCase() === 'menunggu' ? 'Proses' : 'Selesai'}
+                        >
+                            <FaCheck className="w-4 h-4" />
+                        </button>
+                    )}
+
+                    {/* CS STATUS HANDLE */}
+                    {service_type === 'Customer Service' && (
+                        <button
+                            onClick={() => handleUpdateStatusCustomerService(token, status.toLocaleLowerCase() === 'menunggu' ? 'Diproses' : 'Selesai')}
+                            className="w-10 h-10 rounded-sm flex justify-center items-center hover:cursor-pointer bg-green-500 text-white hover:bg-green-600 hover:scale-105 transition-all duration-200 shadow-sm"
+                            title={status.toLocaleLowerCase() === 'menunggu' ? 'Proses' : 'Selesai'}
+                        >
+                            <FaCheck className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

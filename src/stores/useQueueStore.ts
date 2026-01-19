@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import { collection, getDocs, query, where } from "firebase/firestore"
+import { collection, onSnapshot, query, updateDoc, where, doc } from "firebase/firestore"
 import { db } from "../configs/firebase"
 
 export type Data = {
@@ -21,9 +21,13 @@ type QueueState = {
 }
 
 type QueueAction = {
-    getSMKHP: () => Promise<void>
-    getLaboratorium: () => Promise<void>
-    getCustomerService: () => Promise<void>
+    getSMKHP: () => () => void
+    getLaboratorium: () => () => void
+    getCustomerService: () => () => void
+
+    updateSMKHPStatus: (token: string, status: string) => Promise<void>
+    updateLaboratoriumStatus: (token: string, status: string) => Promise<void>
+    updateCustomerServiceStatus: (token: string, status: string) => Promise<void>
 }
 
 const initialState: QueueState = {
@@ -34,22 +38,35 @@ const initialState: QueueState = {
     error: null
 }
 
+// Helper untuk range timestamp hari ini
+const getTodayTimestampRange = () => {
+    const start = new Date()
+    start.setHours(0, 0, 0, 0)
+
+    const end = new Date()
+    end.setHours(23, 59, 59, 999)
+
+    return {
+        start: start.getTime(),
+        end: end.getTime()
+    }
+}
+
 const useQueueStore = create<QueueState & QueueAction>((set) => ({
     ...initialState,
 
     // ================= SMKHP =================
-    getSMKHP: async () => {
-        try {
-            set({ isLoading: true, error: null })
+    getSMKHP: () => {
+        const { start, end } = getTodayTimestampRange()
+        const q = query(
+            collection(db, "SMKHP"),
+            where("status", "==", "active"),
+            where("timestamp", ">=", start),
+            where("timestamp", "<=", end)
+        )
 
-            const q = query(
-                collection(db, "SMKHP"),
-                where("status", "==", "active")
-            )
-
-            const snap = await getDocs(q)
-
-            const data = snap.docs.map((doc) => {
+        return onSnapshot(q, (snap) => {
+            const data = snap.docs.map(doc => {
                 const d = doc.data()
                 return {
                     token: doc.id,
@@ -61,29 +78,29 @@ const useQueueStore = create<QueueState & QueueAction>((set) => ({
                     queueNo: d.queueNo
                 }
             })
-
             set({ smkhp: data })
-        } catch (err) {
+        }, (err) => {
             console.error(err)
-            set({ error: "Gagal mengambil data SMKHP" })
-        } finally {
-            set({ isLoading: false })
-        }
+            set({ error: "Gagal load SMKHP" })
+        })
+    },
+
+    updateSMKHPStatus: async (token, status) => {
+        await updateDoc(doc(db, "SMKHP", token), { subStatus: status })
     },
 
     // ================= LAB =================
-    getLaboratorium: async () => {
-        try {
-            set({ isLoading: true, error: null })
+    getLaboratorium: () => {
+        const { start, end } = getTodayTimestampRange()
+        const q = query(
+            collection(db, "LAB"),
+            where("status", "==", "active"),
+            where("timestamp", ">=", start),
+            where("timestamp", "<=", end)
+        )
 
-            const q = query(
-                collection(db, "LAB"),
-                where("status", "==", "active")
-            )
-
-            const snap = await getDocs(q)
-
-            const data = snap.docs.map((doc) => {
+        return onSnapshot(q, (snap) => {
+            const data = snap.docs.map(doc => {
                 const d = doc.data()
                 return {
                     token: doc.id,
@@ -95,29 +112,29 @@ const useQueueStore = create<QueueState & QueueAction>((set) => ({
                     queueNo: d.queueNo
                 }
             })
-
             set({ laboratorium: data })
-        } catch (err) {
+        }, (err) => {
             console.error(err)
-            set({ error: "Gagal mengambil data Laboratorium" })
-        } finally {
-            set({ isLoading: false })
-        }
+            set({ error: "Gagal load Laboratorium" })
+        })
+    },
+
+    updateLaboratoriumStatus: async (token, status) => {
+        await updateDoc(doc(db, "LAB", token), { subStatus: status })
     },
 
     // ================= CUSTOMER SERVICE =================
-    getCustomerService: async () => {
-        try {
-            set({ isLoading: true, error: null })
+    getCustomerService: () => {
+        const { start, end } = getTodayTimestampRange()
+        const q = query(
+            collection(db, "CustomerService"),
+            where("status", "==", "active"),
+            where("timestamp", ">=", start),
+            where("timestamp", "<=", end)
+        )
 
-            const q = query(
-                collection(db, "CustomerService"),
-                where("status", "==", "active")
-            )
-
-            const snap = await getDocs(q)
-
-            const data = snap.docs.map((doc) => {
+        return onSnapshot(q, (snap) => {
+            const data = snap.docs.map(doc => {
                 const d = doc.data()
                 return {
                     token: doc.id,
@@ -129,15 +146,17 @@ const useQueueStore = create<QueueState & QueueAction>((set) => ({
                     queueNo: d.queueNo
                 }
             })
-
             set({ customer_service: data })
-        } catch (err) {
+        }, (err) => {
             console.error(err)
-            set({ error: "Gagal mengambil data Customer Service" })
-        } finally {
-            set({ isLoading: false })
-        }
+            set({ error: "Gagal load Customer Service" })
+        })
+    },
+
+    updateCustomerServiceStatus: async (token, status) => {
+        await updateDoc(doc(db, "CustomerService", token), { subStatus: status })
     }
+
 }))
 
 export default useQueueStore
