@@ -356,15 +356,17 @@ const ItemQueue = ({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {status.toLocaleLowerCase() === 'diproses' && (
+                        <button
+                            className="w-10 h-10 rounded-sm flex justify-center items-center hover:cursor-pointer bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-105 transition-all duration-200 shadow-sm"
+                            title="Lihat Detail"
+                        >
+                            <FaEye className="w-4 h-4" />
+                        </button>
+                    )}
                     <button
-                        className="w-10 h-10 rounded-sm flex justify-center items-center bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-105 transition-all duration-200 shadow-sm"
-                        title="Lihat Detail"
-                    >
-                        <FaEye className="w-4 h-4" />
-                    </button>
-                    <button
-                        className="w-10 h-10 rounded-sm flex justify-center items-center bg-green-500 text-white hover:bg-green-600 hover:scale-105 transition-all duration-200 shadow-sm"
-                        title="Selesaikan"
+                        className="w-10 h-10 rounded-sm flex justify-center items-center hover:cursor-pointer bg-green-500 text-white hover:bg-green-600 hover:scale-105 transition-all duration-200 shadow-sm"
+                        title={status.toLocaleLowerCase() === 'menunggu' ? 'Proses' : 'Selesai'}
                     >
                         <FaCheck className="w-4 h-4" />
                     </button>
