@@ -8,7 +8,9 @@ import {
     FaClock
 } from "react-icons/fa"
 import { HiUsers } from "react-icons/hi"
-import { useQueueStore, useAuthStore } from "../../stores"
+import { useQueueStore, useAuthStore, useModalStore } from "../../stores"
+
+import SMKHPQueueDetail from "./SMKHPQueueDetail"
 
 /* ================= TYPE ================= */
 type StatusFilter = "all" | "menunggu" | "diproses"
@@ -345,6 +347,8 @@ const ItemQueue = ({
         await getCustomerService()
     }
 
+    const { open } = useModalStore()
+
     return (
         <div className="group relative bg-white border-2 border-slate-200 rounded-sm hover:border-slate-300 hover:shadow-md transition-all duration-200 overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-blue-500 to-blue-600" />
@@ -386,6 +390,11 @@ const ItemQueue = ({
                 <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     {status.toLocaleLowerCase() === 'diproses' && (
                         <button
+                            onClick={() => open({
+                                title: "Detail",
+                                content: <SMKHPQueueDetail token={token} />,
+                                size: "lg",
+                            })}
                             className="w-10 h-10 rounded-sm flex justify-center items-center hover:cursor-pointer bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-105 transition-all duration-200 shadow-sm"
                             title="Lihat Detail"
                         >
@@ -405,11 +414,11 @@ const ItemQueue = ({
                     )}
 
                     {/* SMKHP STATUS HANDLE */}
-                    {service_type === 'SMKHP' && (
+                    {(service_type === 'SMKHP'  && status.toLocaleLowerCase() === 'menunggu' ) && (
                         <button
-                            onClick={() => handleUpdateStatusSMKHP(token, status.toLocaleLowerCase() === 'menunggu' ? 'Diproses' : 'Selesai')}
+                            onClick={() => handleUpdateStatusSMKHP(token, "Diproses")}
                             className="w-10 h-10 rounded-sm flex justify-center items-center hover:cursor-pointer bg-green-500 text-white hover:bg-green-600 hover:scale-105 transition-all duration-200 shadow-sm"
-                            title={status.toLocaleLowerCase() === 'menunggu' ? 'Proses' : 'Selesai'}
+                            title={"Proses"}
                         >
                             <FaCheck className="w-4 h-4" />
                         </button>
