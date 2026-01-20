@@ -1,22 +1,24 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { 
-    MdPerson, MdLocationOn, MdFingerprint, MdArrowBack, 
-    MdFilterList, MdAssignment, MdScience, MdSupportAgent 
-} from "react-icons/md";
-import { 
-    FaEye, FaChevronLeft, FaChevronRight, FaStar, FaAddressCard 
-} from "react-icons/fa";
+
+import { MdPerson, MdLocationOn, MdFingerprint, MdArrowBack, MdFilterList, MdAssignment, MdScience, MdSupportAgent } from "react-icons/md";
+import { FaEye, FaChevronLeft, FaChevronRight, FaStar, FaAddressCard } from "react-icons/fa";
 import { HiBuildingOffice } from "react-icons/hi2";
 import { FiAlertCircle } from "react-icons/fi";
+
 import useHistoryStore, { formatTanggalLengkap } from "../../stores/useHistoryStore";
+import { useModalStore } from "../../stores";
+
+import CreateNoAjuForm from "./CreateNoAjuForm";
 
 export default function DetailHistory() {
     const { id } = useParams();
+
     const {
         user, histories, getUserById, getHistoryByUid,
         loadingUser, loadingHistory
     } = useHistoryStore();
+    const { open } = useModalStore();
 
     const [selectedHistory, setSelectedHistory] = useState<any>(null);
     const [filterType, setFilterType] = useState<string>("all");
@@ -81,7 +83,11 @@ export default function DetailHistory() {
                                     {(!user?.noAju || user?.noAju === "-") && (
                                         <button
                                             type="button"
-                                            onClick={() => console.log("Tambah No Aju")}
+                                            onClick={() => open({
+                                                title: "Create",
+                                                content: <CreateNoAjuForm />,
+                                                size: "lg",
+                                            })}
                                             className="px-4 h-9 rounded-sm flex justify-center items-center gap-2 bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-all shadow-sm"
                                         >
                                             <FaAddressCard /> TAMBAH NO AJU
@@ -91,15 +97,15 @@ export default function DetailHistory() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <InfoItem 
-                                    icon={<MdPerson className="text-blue-500" />} 
-                                    label="Nama Lengkap" 
-                                    value={user?.nama} 
+                                <InfoItem
+                                    icon={<MdPerson className="text-blue-500" />}
+                                    label="Nama Lengkap"
+                                    value={user?.nama}
                                 />
-                                <InfoItem 
-                                    icon={<MdFingerprint className="text-red-500" />} 
-                                    label="NPWP" 
-                                    value={user?.npwp} 
+                                <InfoItem
+                                    icon={<MdFingerprint className="text-red-500" />}
+                                    label="NPWP"
+                                    value={user?.npwp}
                                 />
 
                                 <div className="md:col-span-2 border-t border-slate-100 pt-4 mt-2">
@@ -110,15 +116,15 @@ export default function DetailHistory() {
                                         </div>
                                     ) : (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <InfoItem 
-                                                icon={<HiBuildingOffice className="text-green-600" />} 
-                                                label="Nama Trader" 
-                                                value={user?.namaTrader} 
+                                            <InfoItem
+                                                icon={<HiBuildingOffice className="text-green-600" />}
+                                                label="Nama Trader"
+                                                value={user?.namaTrader}
                                             />
-                                            <InfoItem 
-                                                icon={<MdLocationOn className="text-green-600" />} 
-                                                label="Alamat Trader" 
-                                                value={user?.alamatTrader} 
+                                            <InfoItem
+                                                icon={<MdLocationOn className="text-green-600" />}
+                                                label="Alamat Trader"
+                                                value={user?.alamatTrader}
                                             />
                                         </div>
                                     )}
@@ -167,15 +173,14 @@ export default function DetailHistory() {
                                                     <p className="text-[10px] font-mono text-slate-400">Token: {h.token}</p>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`px-2 py-1 rounded-sm text-[10px] font-bold uppercase ${
-                                                        h.subStatus === "Selesai" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                                                    }`}>
+                                                    <span className={`px-2 py-1 rounded-sm text-[10px] font-bold uppercase ${h.subStatus === "Selesai" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                                                        }`}>
                                                         {h.subStatus}
                                                     </span>
                                                 </td>
                                                 <td className="p-4 text-center">
-                                                    <button 
-                                                        onClick={() => setSelectedHistory(h)} 
+                                                    <button
+                                                        onClick={() => setSelectedHistory(h)}
                                                         className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
                                                     >
                                                         <FaEye size={18} />
@@ -190,24 +195,24 @@ export default function DetailHistory() {
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             {/* Pagination */}
                             {totalPages > 1 && (
                                 <div className="p-4 bg-slate-50 border-t flex justify-center items-center gap-4">
-                                    <button 
-                                        disabled={currentPage === 1} 
-                                        onClick={() => setCurrentPage(prev => prev - 1)} 
+                                    <button
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage(prev => prev - 1)}
                                         className="p-2 border bg-white rounded-sm disabled:opacity-30 hover:bg-slate-50 transition-all"
                                     >
-                                        <FaChevronLeft size={12}/>
+                                        <FaChevronLeft size={12} />
                                     </button>
                                     <span className="text-xs font-medium text-slate-600">Halaman {currentPage} / {totalPages}</span>
-                                    <button 
-                                        disabled={currentPage === totalPages} 
-                                        onClick={() => setCurrentPage(prev => prev + 1)} 
+                                    <button
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage(prev => prev + 1)}
                                         className="p-2 border bg-white rounded-sm disabled:opacity-30 hover:bg-slate-50 transition-all"
                                     >
-                                        <FaChevronRight size={12}/>
+                                        <FaChevronRight size={12} />
                                     </button>
                                 </div>
                             )}
@@ -218,8 +223,8 @@ export default function DetailHistory() {
                     <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden mb-10">
                         <div className="bg-slate-800 p-6 text-white flex justify-between items-center">
                             <div>
-                                <button 
-                                    onClick={() => setSelectedHistory(null)} 
+                                <button
+                                    onClick={() => setSelectedHistory(null)}
                                     className="flex items-center gap-2 text-slate-400 hover:text-white text-xs mb-3 transition-colors uppercase font-bold tracking-widest"
                                 >
                                     <MdArrowBack /> Kembali ke Riwayat

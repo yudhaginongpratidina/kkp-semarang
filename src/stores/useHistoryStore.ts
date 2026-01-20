@@ -36,7 +36,7 @@ export type History = {
         keluhan?: string; 
         jenis?: string;   
         upi?: string;     
-        noAju?: string;   // Menampung No Aju spesifik per transaksi (jika ada)
+        noAju?: string;
         tanggal?: string;
         jam?: string;
     };
