@@ -4,18 +4,24 @@ import {
     getDocs,
     query,
     where,
+    doc,
+    getDoc
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
 
+// 1. Definisi Tipe Data User dengan noAju
 export type User = {
     uid: string;
     nama: string;
     nomorHp: string;
     npwp: string;
+    namaTrader?: string;
     alamatTrader?: string;
     email?: string;
+    noAju?: string; // Menampung No Aju utama dari profil
 };
 
+// 2. Definisi Tipe Data History
 export type History = {
     id: string;
     timestamp: number;
@@ -27,16 +33,16 @@ export type History = {
     queueNo: number;
     comment: string;
     details?: {
-        keluhan?: string; // Khusus Customer Service
-        jenis?: string;   // Khusus Laboratorium
-        upi?: string;     // Khusus Laboratorium
-        noAju?: string;   // Khusus SMKHP
+        keluhan?: string; 
+        jenis?: string;   
+        upi?: string;     
+        noAju?: string;   // Menampung No Aju spesifik per transaksi (jika ada)
         tanggal?: string;
         jam?: string;
     };
 };
 
-// Fungsi Utility untuk merubah format timestamp milidetik ke Tanggal Lengkap
+// Fungsi Utility Tanggal
 export const formatTanggalLengkap = (dateInput: any) => {
     if (!dateInput) return "-";
     const d = new Date(Number(dateInput));
@@ -95,14 +101,23 @@ const useHistoryStore = create<HistoryState>((set) => ({
     async getUserById(uid: string) {
         set({ loadingUser: true, error: null, user: null });
         try {
-            const usersRef = collection(db, "users");
-            const q = query(usersRef, where("uid", "==", uid));
-            const snap = await getDocs(q);
-            if (!snap.empty) {
-                const docData = snap.docs[0];
-                set({ user: { uid: docData.id, ...docData.data() } as User });
+            // Cara 1: Cek berdasarkan ID Dokumen (lebih cepat)
+            const userRef = doc(db, "users", uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                set({ user: { uid: userSnap.id, ...userSnap.data() } as User });
             } else {
-                set({ error: "Pengguna tidak ditemukan" });
+                // Cara 2: Fallback query field "uid" jika ID dokumen berbeda
+                const usersRef = collection(db, "users");
+                const q = query(usersRef, where("uid", "==", uid));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const docData = snap.docs[0];
+                    set({ user: { uid: docData.id, ...docData.data() } as User });
+                } else {
+                    set({ error: "Pengguna tidak ditemukan" });
+                }
             }
         } catch (err: any) {
             set({ error: "Gagal mengambil profil" });
