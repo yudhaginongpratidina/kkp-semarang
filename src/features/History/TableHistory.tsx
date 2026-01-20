@@ -1,178 +1,196 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaWhatsapp, FaEye, FaAddressCard, FaSearch } from "react-icons/fa";
+import { FaEye, FaSearch, FaUserCircle, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useHistoryStore } from "../../stores";
 
 export default function TableHistory() {
-    const { data, get_data } = useHistoryStore();
-
+    const { users, getAllUsers, loadingUser } = useHistoryStore();
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
 
     useEffect(() => {
-        get_data();
-    }, []);
+        getAllUsers();
+    }, [getAllUsers]);
 
-    // 🔍 Filter data
-    const filteredData = useMemo(() => {
-        return data.filter((item) =>
-            item.nama.toLowerCase().includes(search.toLowerCase()) ||
-            item.npwp?.toLowerCase().includes(search.toLowerCase()) ||
-            item.nomorHp?.includes(search)
+    // Filter berdasarkan Nama atau Nomor HP
+    const filteredUsers = useMemo(() => {
+        return users.filter(u =>
+            u.nama?.toLowerCase().includes(search.toLowerCase()) ||
+            u.nomorHp?.includes(search) ||
+            u.npwp?.includes(search)
         );
-    }, [data, search]);
+    }, [users, search]);
 
-    // 📄 Pagination logic
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    // Pagination logic
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentData = filteredData.slice(
-        startIndex,
-        startIndex + itemsPerPage
-    );
+    const endIndex = startIndex + itemsPerPage;
+    const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+    // Reset ke halaman 1 saat search berubah
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search]);
+
+    const handlePageChange = (page: any) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Generate page numbers untuk ditampilkan
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
+
+        if (totalPages <= maxVisible) {
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (currentPage <= 3) {
+                for (let i = 1; i <= 4; i++) pages.push(i);
+                pages.push('...');
+                pages.push(totalPages);
+            } else if (currentPage >= totalPages - 2) {
+                pages.push(1);
+                pages.push('...');
+                for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+            } else {
+                pages.push(1);
+                pages.push('...');
+                pages.push(currentPage - 1);
+                pages.push(currentPage);
+                pages.push(currentPage + 1);
+                pages.push('...');
+                pages.push(totalPages);
+            }
+        }
+        return pages;
+    };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-4">
-            <div className="w-full">
-
-                {/* SEARCH */}
-                <div className="relative mb-6">
-                    <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+        <div className="p-4 mx-auto bg-slate-50">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <p className="text-slate-500 text-sm">Total {filteredUsers.length} pengguna terdaftar</p>
+                <div className="relative w-full md:w-80">
+                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text"
+                        placeholder="Cari nama, NPWP, atau HP..."
+                        className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white shadow-sm transition-all"
+                        onChange={(e) => setSearch(e.target.value)}
                         value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                        placeholder="Cari nama, NPWP, atau nomor HP..."
-                        className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-sm"
                     />
                 </div>
+            </div>
 
-                {/* TABLE */}
-                <div className="bg-white border border-slate-50 rounded-sm overflow-hidden">
-                    <table className="w-full">
-                        <thead className="bg-slate-100">
+            <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="p-4 text-left">Informasi</th>
-                                <th className="p-4 text-left">WhatsApp</th>
-                                <th className="p-4 text-center">Aksi</th>
+                                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">Pengguna</th>
+                                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">NPWP</th>
+                                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {currentData.length > 0 ? (
-                                currentData.map((item) => (
-                                    <ItemData
-                                        key={item.uid}
-                                        id={item.uid}
-                                        full_name={item.nama}
-                                        npwp={item.npwp}
-                                        phone={item.nomorHp}
-                                    />
+                        <tbody className="divide-y divide-slate-100">
+                            {loadingUser ? (
+                                <tr>
+                                    <td colSpan={3} className="p-20 text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                            <span className="text-slate-400 font-medium">Memuat data pengguna...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : currentUsers.length > 0 ? (
+                                currentUsers.map(user => (
+                                    <tr key={user.uid} className="hover:bg-slate-50 transition-colors group">
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
+                                                    <FaUserCircle className="text-2xl" />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-slate-800">{user.nama}</div>
+                                                    <div className="text-xs text-slate-500 font-medium">{user.nomorHp}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className="text-slate-600 font-mono text-sm bg-slate-100 px-2 py-1 rounded-sm">
+                                                {user.npwp || "Tidak ada NPWP"}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <Link
+                                                to={`/history/${user.uid}`}
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm text-sm"
+                                            >
+                                                <FaEye /> Detail Riwayat
+                                            </Link>
+                                        </td>
+                                    </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={3} className="text-center p-6 text-slate-500">
-                                        Data tidak ditemukan
+                                    <td colSpan={3} className="p-20 text-center text-slate-400 italic">
+                                        {search ? `Tidak ada pengguna ditemukan dengan kata kunci "${search}"` : "Tidak ada data pengguna"}
                                     </td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
+                </div>
 
-                    {/* PAGINATION */}
-                    <div className="flex justify-between items-center p-4 border-t border-slate-50">
-                        <p className="text-sm text-slate-600">
-                            Menampilkan {startIndex + 1}–
-                            {Math.min(startIndex + itemsPerPage, filteredData.length)} dari{" "}
-                            {filteredData.length} data
-                        </p>
+                {/* Pagination */}
+                {!loadingUser && filteredUsers.length > 0 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-200 bg-slate-50">
+                        <div className="text-sm text-slate-600">
+                            Menampilkan <span className="font-semibold">{startIndex + 1}</span> - <span className="font-semibold">{Math.min(endIndex, filteredUsers.length)}</span> dari <span className="font-semibold">{filteredUsers.length}</span> pengguna
+                        </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
                             <button
+                                onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
-                                onClick={() => setCurrentPage(p => p - 1)}
-                                className="px-3 py-1 border rounded disabled:opacity-50"
+                                className="p-2 rounded-sm border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                Prev
+                                <FaChevronLeft />
                             </button>
 
-                            {[...Array(totalPages)].map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setCurrentPage(i + 1)}
-                                    className={`px-3 py-1 rounded ${currentPage === i + 1
-                                        ? "bg-blue-600 text-white"
-                                        : "border"
-                                        }`}
-                                >
-                                    {i + 1}
-                                </button>
-                            ))}
+                            <div className="flex items-center gap-1">
+                                {getPageNumbers().map((page, index) => (
+                                    page === '...' ? (
+                                        <span key={`ellipsis-${index}`} className="px-3 py-2 text-slate-400">...</span>
+                                    ) : (
+                                        <button
+                                            key={page}
+                                            onClick={() => handlePageChange(page)}
+                                            className={`px-3 py-2 rounded-sm text-sm font-medium transition-colors ${currentPage === page
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    )
+                                ))}
+                            </div>
 
                             <button
+                                onClick={() => handlePageChange(currentPage + 1)}
                                 disabled={currentPage === totalPages}
-                                onClick={() => setCurrentPage(p => p + 1)}
-                                className="px-3 py-1 border rounded disabled:opacity-50"
+                                className="p-2 rounded-sm border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                Next
+                                <FaChevronRight />
                             </button>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );
-}
-
-
-const ItemData = ({ id, full_name, npwp, phone }: { id: string, full_name: string, npwp: string, phone: string }) => {
-    const initial = full_name.charAt(0).toUpperCase();
-    const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-orange-500', 'bg-pink-500'];
-    const colorIndex = full_name.charCodeAt(0) % colors.length;
-
-    return (
-        <tr className="group border-b border-slate-100 hover:bg-slate-50 transition-all duration-200">
-            <td className="p-4">
-                <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 flex justify-center items-center rounded-sm ${colors[colorIndex]} text-white font-bold text-lg shadow-sm shrink-0`}>
-                        {initial}
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                        <h3 className="font-semibold text-slate-800 text-sm truncate">{full_name}</h3>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                                <FaAddressCard className="w-3 h-3 text-slate-400" />
-                                <span className="truncate">{npwp || 'Belum punya npwp'}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </td>
-            <td className="p-4">
-                <a
-                    href={`https://wa.me/${phone}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-sm hover:bg-green-100 transition-all duration-200 font-medium text-sm border border-green-200"
-                >
-                    <FaWhatsapp className="w-4 h-4" />
-                    <span>{phone}</span>
-                </a>
-            </td>
-            <td className="p-4">
-                <div className="flex items-center justify-center gap-2">
-                    <Link
-                        to={`/history/${id}`}
-                        className="px-4 py-2 bg-blue-50 text-blue-700 rounded-sm hover:bg-blue-100 transition-all duration-200 font-medium text-sm border border-blue-200 flex items-center gap-2 opacity-70 group-hover:opacity-100"
-                        title="Lihat Detail"
-                    >
-                        <FaEye className="w-4 h-4" />
-                        Detail
-                    </Link>
-                </div>
-            </td>
-        </tr>
-    )
 }

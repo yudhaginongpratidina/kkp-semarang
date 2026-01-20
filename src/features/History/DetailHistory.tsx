@@ -1,218 +1,260 @@
-import { useState } from "react";
-import { MdDateRange, MdPerson, MdLocationOn, MdFingerprint } from "react-icons/md";
-import { FaEye, FaArrowLeft } from "react-icons/fa";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, Link } from "react-router-dom";
+import {
+    MdPerson, MdLocationOn, MdFingerprint, MdArrowBack, MdFilterList, MdAssignment, MdScience, MdSupportAgent
+} from "react-icons/md";
+import { FaEye, FaChevronLeft, FaChevronRight, FaStar } from "react-icons/fa";
+import useHistoryStore, { formatTanggalLengkap } from "../../stores/useHistoryStore";
 
 export default function DetailHistory() {
-    const [selectedHistory, setSelectedHistory] = useState<any>(null);
+    const { id } = useParams();
+    const {
+        user, histories, getUserById, getHistoryByUid,
+        loadingUser, loadingHistory
+    } = useHistoryStore();
 
-    const historyData = [
-        {
-            id: 1,
-            date: "10 Oktober 2023",
-            service: "SMKHP",
-            status: "SELESAI",
-            statusColor: "bg-green-500",
-            notes: "Pemeriksaan kesehatan lengkap telah selesai dilakukan",
-            doctor: "Supriyanto"
-        },
-        {
-            id: 2,
-            date: "15 September 2023",
-            service: "Laboratorium",
-            status: "SELESAI",
-            statusColor: "bg-green-500",
-            notes: "Hasil lab menunjukkan kondisi normal",
-            testType: "Tes Hiu"
-        },
-        {
-            id: 3,
-            date: "20 Agustus 2023",
-            service: "Customer Service",
-            status: "SELESAI",
-            statusColor: "bg-green-500",
-            notes: "Konsultasi terkait jadwal pemeriksaan",
-            officer: "Rina Permata"
-        },
-        {
-            id: 4,
-            date: "05 Agustus 2023",
-            service: "Laboratorium",
-            status: "DIBATALKAN",
-            statusColor: "bg-red-500",
-            notes: "Orang tidak hadir pada jadwal yang ditentukan",
-            testType: "Tes Daging"
+    const [selectedHistory, setSelectedHistory] = useState<any>(null);
+    const [filterType, setFilterType] = useState<string>("all");
+    const [filterStatus, setFilterStatus] = useState<string>("all");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    useEffect(() => {
+        if (id) {
+            getUserById(id);
+            getHistoryByUid(id);
         }
-    ];
+    }, [id, getUserById, getHistoryByUid]);
+
+    // Filter histories
+    const filteredHistories = useMemo(() => {
+        return histories.filter(h => {
+            const matchType = filterType === "all" || h.type === filterType;
+            const matchStatus = filterStatus === "all" || h.subStatus === filterStatus;
+            return matchType && matchStatus;
+        });
+    }, [histories, filterType, filterStatus]);
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredHistories.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentHistories = filteredHistories.slice(startIndex, startIndex + itemsPerPage);
+
+    useEffect(() => { setCurrentPage(1); }, [filterType, filterStatus]);
+
+    const uniqueTypes = useMemo(() => Array.from(new Set(histories.map(h => h.type))), [histories]);
+    const uniqueStatuses = useMemo(() => Array.from(new Set(histories.map(h => h.subStatus))), [histories]);
+
+    if (loadingUser || loadingHistory) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-slate-600 font-medium">Memuat data...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="w-full min-h-screen bg-gray-50 p-4">
-            {!selectedHistory ? (
-                <div className="w-full mx-auto flex flex-col gap-4">
-                    {/* Card Info Pengguna */}
-                    <div className="bg-white rounded-sm shadow-sm border border-gray-100 p-5">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
-                            Informasi Pengguna
-                        </h2>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <MdFingerprint className="w-5 h-5 text-blue-600" />
-                                <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-30">NIK</span>
-                                    <span className="text-sm text-gray-800">: 0000000000</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <MdPerson className="w-5 h-5 text-blue-600" />
-                                <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-30">Nama Lengkap</span>
-                                    <span className="text-sm text-gray-800">: Silent Hil</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <MdLocationOn className="w-5 h-5 text-blue-600" />
-                                <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-30">Alamat</span>
-                                    <span className="text-sm text-gray-800">: Jln Kenangan</span>
+        <div className="bg-slate-50 p-4 min-h-screen">
+            <div className="w-full">
+                <Link to="/history" className="inline-flex items-center gap-2 text-blue-600 mb-6 hover:underline font-medium">
+                    <MdArrowBack /> Kembali ke Daftar User
+                </Link>
+
+                {!selectedHistory ? (
+                    <>
+                        {/* PROFIL USER */}
+                        <div className="bg-white p-6 rounded-sm shadow-sm border border-slate-200 mb-6">
+                            <h2 className="text-xl font-bold mb-4 text-slate-800">Informasi Pengguna</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <InfoItem icon={<MdPerson className="text-blue-500" />} label="Nama" value={user?.nama} />
+                                <InfoItem icon={<MdFingerprint className="text-red-500" />} label="NPWP" value={user?.npwp} />
+                                <div className="md:col-span-2 border-t pt-3 mt-1">
+                                    <InfoItem icon={<MdLocationOn className="text-green-500" />} label="Alamat Trader" value={user?.alamatTrader} />
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Card Riwayat Table */}
-                    <div className="bg-white rounded-sm shadow-sm border border-gray-100 p-5">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
-                            Riwayat Layanan
-                        </h2>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-gray-200">
-                                        <th className="text-left py-3 px-4 font-semibold text-gray-700">No</th>
-                                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Tanggal</th>
-                                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Jenis Layanan</th>
-                                        <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                                        <th className="text-center py-3 px-4 font-semibold text-gray-700">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {historyData.map((history, index) => (
-                                        <tr key={history.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                                            <td className="py-3 px-4 text-gray-700">{index + 1}</td>
-                                            <td className="py-3 px-4 text-gray-700">
-                                                <div className="flex items-center gap-2">
-                                                    <MdDateRange className="w-4 h-4 text-gray-500" />
-                                                    <span>{history.date}</span>
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4 text-gray-800 font-medium">{history.service}</td>
-                                            <td className="py-3 px-4">
-                                                <span className={`px-3 py-1 rounded-sm ${history.statusColor} text-white text-xs font-medium`}>
-                                                    {history.status}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 px-4 text-center">
-                                                <button
-                                                    onClick={() => setSelectedHistory(history)}
-                                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-sm text-xs font-medium transition-colors duration-200"
-                                                >
-                                                    <FaEye className="w-3 h-3" />
-                                                    <span>Detail</span>
-                                                </button>
-                                            </td>
+                        {/* FILTER SECTION */}
+                        <div className="bg-white p-4 rounded-sm shadow-sm border border-slate-200 mb-4">
+                            <div className="flex items-center gap-2 mb-3">
+                                <MdFilterList className="text-slate-600 text-xl" />
+                                <h3 className="font-semibold text-slate-700">Filter Riwayat</h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FilterSelect label="Tipe Layanan" value={filterType} onChange={setFilterType} options={uniqueTypes} />
+                                <FilterSelect label="Status" value={filterStatus} onChange={setFilterStatus} options={uniqueStatuses} />
+                            </div>
+                        </div>
+
+                        {/* TABEL RIWAYAT */}
+                        <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="p-4 bg-slate-50 border-b flex justify-between items-center">
+                                <div>
+                                    <h3 className="font-bold text-slate-700">Riwayat Layanan</h3>
+                                    <p className="text-xs text-slate-500">Total {filteredHistories.length} data ditemukan</p>
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 text-slate-600 text-xs uppercase">
+                                        <tr>
+                                            <th className="p-4 font-semibold">Tanggal & Waktu</th>
+                                            <th className="p-4 font-semibold">Layanan</th>
+                                            <th className="p-4 font-semibold">Status</th>
+                                            <th className="p-4 text-center font-semibold">Aksi</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {currentHistories.map((h) => (
+                                            <tr key={h.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="p-4 text-sm text-slate-600">
+                                                    {formatTanggalLengkap(h.timestamp)}
+                                                </td>
+                                                <td className="p-4 font-medium text-slate-700 text-sm">
+                                                    {h.type}
+                                                </td>
+                                                <td className="p-4 text-xs font-bold">
+                                                    <span className={h.subStatus === "Selesai" ? "text-green-600" : "text-blue-600"}>
+                                                        {h.subStatus}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-center">
+                                                    <button onClick={() => setSelectedHistory(h)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors">
+                                                        <FaEye size={18} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {/* Pagination (Simplified) */}
+                            {totalPages > 1 && (
+                                <div className="p-4 bg-slate-50 border-t flex justify-center gap-2">
+                                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="p-2 disabled:opacity-30"><FaChevronLeft/></button>
+                                    <span className="text-sm self-center">Hal {currentPage} dari {totalPages}</span>
+                                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)} className="p-2 disabled:opacity-30"><FaChevronRight/></button>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="w-full mx-auto flex flex-col gap-4">
-                    {/* Tombol Kembali */}
-                    <button
-                        onClick={() => setSelectedHistory(null)}
-                        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
-                    >
-                        <FaArrowLeft className="w-4 h-4" />
-                        <span>Kembali ke Riwayat</span>
-                    </button>
+                    </>
+                ) : (
+                    /* TAMPILAN DETAIL DINAMIS */
+                    <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden mb-10">
+                        <div className="bg-slate-800 p-6 text-white flex justify-between items-center">
+                            <div>
+                                <button onClick={() => setSelectedHistory(null)} className="flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-2 transition-colors">
+                                    <MdArrowBack /> Kembali ke Riwayat
+                                </button>
+                                <h2 className="text-2xl font-bold flex items-center gap-2">
+                                    {selectedHistory.type === "Customer Service" && <MdSupportAgent />}
+                                    {selectedHistory.type === "Laboratorium" && <MdScience />}
+                                    {selectedHistory.type === "SMKHP" && <MdAssignment />}
+                                    Detail {selectedHistory.type}
+                                </h2>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs text-slate-400 uppercase tracking-widest">Token</p>
+                                <p className="font-mono font-bold text-lg">{selectedHistory.token}</p>
+                            </div>
+                        </div>
 
-                    {/* Card Info Pengguna */}
-                    <div className="bg-white rounded-sm shadow-sm border border-gray-100 p-5">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
-                            Informasi Pengguna
-                        </h2>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <MdFingerprint className="w-5 h-5 text-blue-600" />
-                                <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-30">NIK</span>
-                                    <span className="text-sm text-gray-800">: 0000000000</span>
-                                </div>
+                        <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {/* Kolom 1: Status & Waktu */}
+                            <div className="space-y-6">
+                                <DetailRow label="Status Layanan" value={selectedHistory.subStatus} isStatus />
+                                <DetailRow label="Tanggal Transaksi" value={formatTanggalLengkap(selectedHistory.timestamp)} />
+                                <DetailRow label="Nomor Antrian" value={selectedHistory.queueNo} />
                             </div>
-                            <div className="flex items-center gap-3">
-                                <MdPerson className="w-5 h-5 text-blue-600" />
-                                <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-30">Nama Lengkap</span>
-                                    <span className="text-sm text-gray-800">: Silent Hil</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <MdLocationOn className="w-5 h-5 text-blue-600" />
-                                <div className="flex gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-30">Alamat</span>
-                                    <span className="text-sm text-gray-800">: Jln Kenangan</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Card Detail Layanan */}
-                    <div className="bg-white rounded-sm shadow-sm border border-gray-100 p-5">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
-                            Detail Layanan
-                        </h2>
-                        <div className="space-y-3">
-                            <div className="flex items-start gap-2">
-                                <span className="text-sm font-medium text-gray-600 min-w-35">Tanggal</span>
-                                <span className="text-sm text-gray-800">: {selectedHistory.date}</span>
+                            {/* Kolom 2: Detail Spesifik Layanan (Berdasarkan data anda) */}
+                            <div className="space-y-6 md:border-x md:px-8 border-slate-100">
+                                <h3 className="text-xs font-black text-blue-600 uppercase tracking-tighter">Informasi Detail</h3>
+                                
+                                {selectedHistory.type === "Customer Service" && (
+                                    <>
+                                        <DetailRow label="Keluhan" value={selectedHistory.details?.keluhan} />
+                                        <DetailRow label="Jam Janji" value={selectedHistory.details?.jam} />
+                                    </>
+                                )}
+
+                                {selectedHistory.type === "Laboratorium" && (
+                                    <>
+                                        <DetailRow label="Jenis Komoditas" value={selectedHistory.details?.jenis} />
+                                        <DetailRow label="Nomor UPI" value={selectedHistory.details?.upi} />
+                                        <DetailRow label="WhatsApp" value={selectedHistory.details?.wa} />
+                                    </>
+                                )}
+
+                                {selectedHistory.type === "SMKHP" && (
+                                    <>
+                                        <DetailRow label="Nomor Aju" value={selectedHistory.details?.noAju} />
+                                        <DetailRow label="Jam Input" value={selectedHistory.details?.jam} />
+                                        <DetailRow label="Tanggal Target" value={selectedHistory.details?.tanggal} />
+                                    </>
+                                )}
                             </div>
-                            <div className="flex items-start gap-2">
-                                <span className="text-sm font-medium text-gray-600 min-w-35">Jenis Layanan</span>
-                                <span className="text-sm text-gray-800">: {selectedHistory.service}</span>
-                            </div>
-                            <div className="flex items-start gap-2">
-                                <span className="text-sm font-medium text-gray-600 min-w-35">Status</span>
-                                <span className={`px-3 py-1 rounded-sm ${selectedHistory.statusColor} text-white text-xs font-medium`}>
-                                    {selectedHistory.status}
-                                </span>
-                            </div>
-                            {selectedHistory.doctor && (
-                                <div className="flex items-start gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-35">Dokter</span>
-                                    <span className="text-sm text-gray-800">: {selectedHistory.doctor}</span>
+
+                            {/* Kolom 3: Feedback & Deadline */}
+                            <div className="space-y-6">
+                                <div>
+                                    <p className="text-xs font-bold text-slate-400 uppercase mb-2">Rating Pelanggan</p>
+                                    <div className="flex items-center gap-1">
+                                        {[...Array(5)].map((_, i) => (
+                                            <FaStar key={i} className={i < (selectedHistory.rating || 0) ? "text-yellow-400" : "text-slate-200"} />
+                                        ))}
+                                        <span className="ml-2 font-bold text-slate-700">{selectedHistory.rating || 0}/5</span>
+                                    </div>
                                 </div>
-                            )}
-                            {selectedHistory.testType && (
-                                <div className="flex items-start gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-35">Jenis Tes</span>
-                                    <span className="text-sm text-gray-800">: {selectedHistory.testType}</span>
-                                </div>
-                            )}
-                            {selectedHistory.officer && (
-                                <div className="flex items-start gap-2">
-                                    <span className="text-sm font-medium text-gray-600 min-w-35">Petugas</span>
-                                    <span className="text-sm text-gray-800">: {selectedHistory.officer}</span>
-                                </div>
-                            )}
-                            <div className="flex items-start gap-2">
-                                <span className="text-sm font-medium text-gray-600 min-w-35">Catatan</span>
-                                <span className="text-sm text-gray-800">: {selectedHistory.notes}</span>
+                                <DetailRow label="Komentar" value={selectedHistory.comment || "Tidak ada komentar"} />
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
+        </div>
+    );
+}
+
+// Sub-komponen pendukung
+function InfoItem({ icon, label, value }: any) {
+    return (
+        <div className="flex items-start gap-3">
+            <div className="text-xl mt-1">{icon}</div>
+            <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</p>
+                <p className="text-slate-700 font-semibold">{value || "-"}</p>
+            </div>
+        </div>
+    );
+}
+
+function DetailRow({ label, value, isStatus }: any) {
+    return (
+        <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+            <p className={`font-medium ${isStatus ? 'text-blue-600 font-bold' : 'text-slate-800'}`}>
+                {value || "-"}
+            </p>
+        </div>
+    );
+}
+
+function FilterSelect({ label, value, onChange, options }: any) {
+    return (
+        <div>
+            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">{label}</label>
+            <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-sm text-sm outline-none focus:border-blue-500 transition-colors"
+            >
+                <option value="all">Semua {label}</option>
+                {options.map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
         </div>
     );
 }
