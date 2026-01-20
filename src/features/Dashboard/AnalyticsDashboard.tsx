@@ -166,13 +166,29 @@ export default function AnalyticsDashboard() {
                 </div>
             </div>
 
+            {/* SUMMARY CARDS - Menampilkan variabel 'total' */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-sm shadow border-l-4 border-blue-500">
+                    <p className="text-gray-500 text-xs uppercase font-semibold">Total SMKHP</p>
+                    <p className="text-2xl font-bold">{total.smkhp}</p>
+                </div>
+                <div className="bg-white p-4 rounded-sm shadow border-l-4 border-emerald-500">
+                    <p className="text-gray-500 text-xs uppercase font-semibold">Total Lab</p>
+                    <p className="text-2xl font-bold">{total.laboratorium}</p>
+                </div>
+                <div className="bg-white p-4 rounded-sm shadow border-l-4 border-amber-500">
+                    <p className="text-gray-500 text-xs uppercase font-semibold">Total CS</p>
+                    <p className="text-2xl font-bold">{total.customerService}</p>
+                </div>
+            </div>
+
             {/* CHART */}
             <div className="bg-white p-5 rounded-sm shadow">
                 <BarChart
                     dataset={dataset}
                     height={400}
                     xAxis={[{ scaleType: "band", dataKey: "label" }]}
-                    yAxis={[{ label: "Total Antrean" }]}
+                    // ... sisa properti chart tetap sama
                     series={[
                         { dataKey: "smkhp", label: "SMKHP", color: "#3b82f6" },
                         { dataKey: "laboratorium", label: "Lab", color: "#10b981" },
@@ -181,10 +197,7 @@ export default function AnalyticsDashboard() {
                     slotProps={{
                         legend: {
                             direction: 'row' as const,
-                            position: {
-                                vertical: 'top',
-                                horizontal: 'center',
-                            },
+                            position: { vertical: 'top', horizontal: 'center' },
                             padding: 0,
                         } as any
                     }}
