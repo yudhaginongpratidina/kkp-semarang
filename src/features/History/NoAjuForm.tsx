@@ -8,7 +8,7 @@ import { useNoAjuStore } from "../../stores/useNoAjuStore";
 // components
 import { FormControl, TextField, Button } from "../../components";
 
-export default function CreateNoAjuForm() {
+export default function NoAjuForm({ type }: { type: "create" | "update" }) {
     const { id: uid } = useParams();
     const { noAju, upsert_no_aju, setField, loading } = useNoAjuStore();
 
@@ -24,9 +24,9 @@ export default function CreateNoAjuForm() {
     return (
         <FormControl onSubmit={handleSubmit}>
             <TextField
-                type="text" 
-                required={true} 
-                id="noAju" 
+                type="text"
+                required={true}
+                id="noAju"
                 label="Nomor AJU"
                 placeholder="Masukkan nomor AJU..."
                 schema={z.string().min(5, "Minimal 5 karakter")}
@@ -36,12 +36,12 @@ export default function CreateNoAjuForm() {
                 }}
             />
             <div className="w-full flex flex-col md:flex-row justify-end items-center gap-4 mt-4">
-                <Button 
-                    type="submit" 
+                <Button
+                    type="submit"
                     className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-slate-400"
                     disabled={loading}
                 >
-                    {loading ? "Menyimpan..." : "Simpan Nomor AJU"}
+                    {type === "create" ? "Simpan Nomor AJU" : "Update Nomor AJU"}
                 </Button>
             </div>
         </FormControl>

@@ -9,7 +9,7 @@ import { FiAlertCircle } from "react-icons/fi";
 import useHistoryStore, { formatTanggalLengkap } from "../../stores/useHistoryStore";
 import { useModalStore } from "../../stores";
 
-import CreateNoAjuForm from "./CreateNoAjuForm";
+import NoAjuForm from "./NoAjuForm";
 
 export default function DetailHistory() {
     const { id } = useParams();
@@ -85,12 +85,26 @@ export default function DetailHistory() {
                                             type="button"
                                             onClick={() => open({
                                                 title: "Create",
-                                                content: <CreateNoAjuForm />,
+                                                content: <NoAjuForm type="create" />,
                                                 size: "lg",
                                             })}
                                             className="px-4 h-9 rounded-sm flex justify-center items-center gap-2 bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-all shadow-sm"
                                         >
                                             <FaAddressCard /> TAMBAH NO AJU
+                                        </button>
+                                    )}
+
+                                    {user?.noAju && (
+                                        <button
+                                            type="button"
+                                            onClick={() => open({
+                                                title: "Update",
+                                                content: <NoAjuForm type="update" />,
+                                                size: "lg",
+                                            })}
+                                            className="px-4 h-9 rounded-sm flex justify-center items-center gap-2 bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-all shadow-sm"
+                                        >
+                                            <FaAddressCard /> UPDATE NO AJU
                                         </button>
                                     )}
                                 </div>
