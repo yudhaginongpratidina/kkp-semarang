@@ -1,22 +1,25 @@
 // libraries
-import { useLocation,useParams } from "react-router-dom"
+import { useLocation, useParams } from "react-router-dom"
 
 // features
-import { KPPSidebar, KPPHeader, KPPMain } from "../features/Layout"
+import { KPPSidebar, KPPHeader, KPPMain, KPPModal } from "../features/Layout"
 import { TableHistory, DetailsHistory } from "../features/History"
 
 export default function HistoryView() {
     const location = useLocation()
     const { id } = useParams<{ id: string }>();
-    
+
     return (
-        <div className="w-full flex">
-            <KPPSidebar />
-            <KPPMain>
-                <KPPHeader />
-                {location.pathname === "/history" && <TableHistory />}
-                {location.pathname === `/history/${id}` && <DetailsHistory />}
-            </KPPMain>
-        </div>
+        <>
+            <KPPModal />
+            <div className="w-full flex">
+                <KPPSidebar />
+                <KPPMain>
+                    <KPPHeader />
+                    {location.pathname === "/history" && <TableHistory />}
+                    {location.pathname === `/history/${id}` && <DetailsHistory />}
+                </KPPMain>
+            </div>
+        </>
     )
 }

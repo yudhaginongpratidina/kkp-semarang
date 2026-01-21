@@ -27,6 +27,8 @@ type AuthState = {
     user: {
         id: string
         email: string
+        full_name: string
+        nip: string
         role: string
     }
 }
@@ -52,6 +54,8 @@ const initialState: Omit<AuthState, 'is_loading' | 'is_error' | 'message'> = {
     user: {
         id: '',
         email: '',
+        full_name: '',
+        nip: '',
         role: ''
     }
 }
@@ -75,7 +79,7 @@ const useAuthStore = create<AuthState & AuthAction>()(
                 try {
                     await signOut(auth);
                     set({
-                        user: { id: '', email: '', role: '' },
+                        user: { id: '', email: '', full_name: '', role: '', nip: '' },
                         full_name: '',
                         email: '',
                         nip: '',
@@ -143,7 +147,7 @@ const useAuthStore = create<AuthState & AuthAction>()(
                     if (userDoc.exists()) {
                         const data = userDoc.data();
                         set({
-                            user: { id: uid, email: data.email, role: data.role },
+                            user: { id: uid, email: data.email, full_name: data.full_name, role: data.role, nip: data.nip },
                             role: data.role,
                             nip: data.nip
                         });

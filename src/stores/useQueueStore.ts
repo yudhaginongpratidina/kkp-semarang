@@ -1,162 +1,297 @@
-import { create } from "zustand"
-import { collection, onSnapshot, query, updateDoc, where, doc } from "firebase/firestore"
-import { db } from "../configs/firebase"
+import { create } from "zustand";
+import {
+    collection,
+    onSnapshot,
+    query,
+    updateDoc,
+    where,
+    doc,
+    getDoc,
+    setDoc,
+    deleteDoc,
+} from "firebase/firestore";
+import { db } from "../configs/firebase";
 
+// ================= Types =================
 export type Data = {
-    token: string
-    type: string
-    userName: string
-    nomorHp: string
-    status: string
-    subStatus: string
-    queueNo: number
-}
+    token: string;
+    type: string;
+    userName: string;
+    nomorHp: string;
+    status: string;
+    subStatus: string;
+    queueNo: number;
+};
+
+type SMKHPDetail = {
+    queueNo: number;
+    userName: string;
+    token: string;
+    npwp: string;
+};
+
+type LaboratoriumDetail = {
+    queueNo: number;
+    userName: string;
+    token: string;
+    npwp: string;
+    jenis: string;
+    upi: string;
+    wa: string;
+};
+
+type CustomerServiceDetail = {
+    queueNo: number;
+    userName: string;
+    token: string;
+    npwp: string;
+    keluhan: string;
+};
+
+type Petugas = {
+    nama: string;
+    nip: string;
+    catatan_petugas: string;
+};
 
 type QueueState = {
-    smkhp: Data[]
-    laboratorium: Data[]
-    customer_service: Data[]
-    isLoading: boolean
-    error: string | null
-}
+    smkhp: Data[];
+    smkhp_detail: SMKHPDetail | null;
+    laboratorium: Data[];
+    laboratorium_detail: LaboratoriumDetail | null;
+    customer_service: Data[];
+    customer_service_detail: CustomerServiceDetail | null;
+    petugas: Petugas;
+    isLoading: boolean;
+    error: string | null;
+};
 
 type QueueAction = {
-    getSMKHP: () => () => void
-    getLaboratorium: () => () => void
-    getCustomerService: () => () => void
+    getSMKHP: () => () => void;
+    getLaboratorium: () => () => void;
+    getCustomerService: () => () => void;
 
-    updateSMKHPStatus: (token: string, status: string) => Promise<void>
-    updateLaboratoriumStatus: (token: string, status: string) => Promise<void>
-    updateCustomerServiceStatus: (token: string, status: string) => Promise<void>
-}
+    getSMKHPByToken: (token: string) => Promise<void>;
+    getLaboratoriumByToken: (token: string) => Promise<void>;
+    getCustomerServiceByToken: (token: string) => Promise<void>;
+
+    updateSMKHPHandle: (token: string, catatan?: string) => Promise<void>;
+    updateSMKHPStatus: (token: string, status: string) => Promise<void>;
+
+    updateLaboratoriumHandle: (token: string, catatan?: string) => Promise<void>;
+    updateLaboratoriumStatus: (token: string, status: string) => Promise<void>;
+
+    updateCustomerServiceHandle: (token: string, catatan?: string) => Promise<void>;
+    updateCustomerServiceStatus: (token: string, status: string) => Promise<void>;
+
+    setPetugas: (nama: string, nip: string) => void;
+    setField: <K extends keyof QueueState>(key: K, value: QueueState[K]) => void;
+};
 
 const initialState: QueueState = {
     smkhp: [],
+    smkhp_detail: null,
     laboratorium: [],
+    laboratorium_detail: null,
     customer_service: [],
+    customer_service_detail: null,
+    petugas: { nama: "", nip: "", catatan_petugas: "" },
     isLoading: false,
     error: null
-}
+};
 
-// Helper untuk range timestamp hari ini
-const getTodayTimestampRange = () => {
-    const start = new Date()
-    start.setHours(0, 0, 0, 0)
-
-    const end = new Date()
-    end.setHours(23, 59, 59, 999)
-
-    return {
-        start: start.getTime(),
-        end: end.getTime()
-    }
-}
-
-const useQueueStore = create<QueueState & QueueAction>((set) => ({
+// ================= Store =================
+const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
     ...initialState,
 
-    // ================= SMKHP =================
-    getSMKHP: () => {
-        const { start, end } = getTodayTimestampRange()
-        const q = query(
-            collection(db, "SMKHP"),
-            where("status", "==", "active"),
-            where("timestamp", ">=", start),
-            where("timestamp", "<=", end)
-        )
+    setField: (key, value) => set((state) => ({ ...state, [key]: value })),
 
+    setPetugas: (nama, nip) => {
+        set((state) => ({
+            petugas: { ...state.petugas, nama, nip }
+        }));
+    },
+
+    // ================= SMKHP Actions =================
+    getSMKHP: () => {
+        const q = query(collection(db, "SMKHP"), where("status", "==", "active"));
         return onSnapshot(q, (snap) => {
-            const data = snap.docs.map(doc => {
-                const d = doc.data()
-                return {
-                    token: doc.id,
-                    type: "SMKHP",
-                    userName: d.userNama,
-                    nomorHp: d.nomorHp,
-                    status: d.status,
-                    subStatus: d.subStatus,
-                    queueNo: d.queueNo
-                }
-            })
-            set({ smkhp: data })
-        }, (err) => {
-            console.error(err)
-            set({ error: "Gagal load SMKHP" })
-        })
+            const data = snap.docs.map(doc => ({
+                token: doc.id,
+                type: "SMKHP",
+                userName: doc.data().userNama || doc.data().userName,
+                nomorHp: doc.data().nomorHp,
+                status: doc.data().status,
+                subStatus: doc.data().subStatus,
+                queueNo: doc.data().queueNo
+            }));
+            set({ smkhp: data });
+        });
+    },
+
+    getSMKHPByToken: async (token: string) => {
+        set({ isLoading: true, error: null, smkhp_detail: null });
+        try {
+            const docSnap = await getDoc(doc(db, "SMKHP", token));
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                set({
+                    smkhp_detail: {
+                        queueNo: d.queueNo,
+                        userName: d.userNama || d.userName,
+                        token: token,
+                        npwp: d.npwp || "-"
+                    }
+                });
+            }
+        } catch (err) { set({ error: "Gagal ambil detail SMKHP" }); }
+        finally { set({ isLoading: false }); }
+    },
+
+    updateSMKHPHandle: async (token, catatan) => {
+        const { petugas } = get();
+        set({ isLoading: true });
+        try {
+            const docRef = doc(db, "SMKHP", token);
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                await setDoc(doc(db, "history", token), {
+                    ...snap.data(),
+                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+                    subStatus: "Selesai",
+                    status: "inactive",
+                    completedAt: Date.now()
+                });
+                await deleteDoc(docRef);
+            }
+        } finally { set({ isLoading: false }); }
     },
 
     updateSMKHPStatus: async (token, status) => {
-        await updateDoc(doc(db, "SMKHP", token), { subStatus: status })
+        await updateDoc(doc(db, "SMKHP", token), { subStatus: status });
     },
 
-    // ================= LAB =================
+    // ================= Laboratorium Actions =================
     getLaboratorium: () => {
-        const { start, end } = getTodayTimestampRange()
-        const q = query(
-            collection(db, "LAB"),
-            where("status", "==", "active"),
-            where("timestamp", ">=", start),
-            where("timestamp", "<=", end)
-        )
-
+        const q = query(collection(db, "LAB"), where("status", "==", "active"));
         return onSnapshot(q, (snap) => {
-            const data = snap.docs.map(doc => {
-                const d = doc.data()
-                return {
-                    token: doc.id,
-                    type: "Laboratorium",
-                    userName: d.userNama,
-                    nomorHp: d.nomorHp,
-                    status: d.status,
-                    subStatus: d.subStatus,
-                    queueNo: d.queueNo
-                }
-            })
-            set({ laboratorium: data })
-        }, (err) => {
-            console.error(err)
-            set({ error: "Gagal load Laboratorium" })
-        })
+            const data = snap.docs.map(doc => ({
+                token: doc.id,
+                type: "Laboratorium",
+                userName: doc.data().userNama || doc.data().userName,
+                nomorHp: doc.data().nomorHp,
+                status: doc.data().status,
+                subStatus: doc.data().subStatus,
+                queueNo: doc.data().queueNo
+            }));
+            set({ laboratorium: data });
+        });
+    },
+
+    getLaboratoriumByToken: async (token: string) => {
+        set({ isLoading: true, error: null, laboratorium_detail: null });
+        try {
+            const docSnap = await getDoc(doc(db, "LAB", token));
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                const details = d.details || {};
+                set({
+                    laboratorium_detail: {
+                        token,
+                        userName: d.userNama || d.userName || "No Name",
+                        queueNo: d.queueNo,
+                        npwp: d.npwp || "-",
+                        jenis: details.jenis || "-",
+                        upi: details.upi || "-",
+                        wa: details.wa || d.nomorHp || "-"
+                    }
+                });
+            }
+        } finally { set({ isLoading: false }); }
+    },
+
+    updateLaboratoriumHandle: async (token, catatan) => {
+        const { petugas } = get();
+        set({ isLoading: true });
+        try {
+            const docRef = doc(db, "LAB", token);
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                await setDoc(doc(db, "history", token), {
+                    ...snap.data(),
+                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+                    subStatus: "Selesai",
+                    status: "inactive",
+                    completedAt: Date.now()
+                });
+                await deleteDoc(docRef);
+            }
+        } finally { set({ isLoading: false }); }
     },
 
     updateLaboratoriumStatus: async (token, status) => {
-        await updateDoc(doc(db, "LAB", token), { subStatus: status })
+        await updateDoc(doc(db, "LAB", token), { subStatus: status });
     },
 
-    // ================= CUSTOMER SERVICE =================
+    // ================= Customer Service Actions =================
     getCustomerService: () => {
-        const { start, end } = getTodayTimestampRange()
-        const q = query(
-            collection(db, "CustomerService"),
-            where("status", "==", "active"),
-            where("timestamp", ">=", start),
-            where("timestamp", "<=", end)
-        )
-
+        const q = query(collection(db, "CustomerService"), where("status", "==", "active"));
         return onSnapshot(q, (snap) => {
-            const data = snap.docs.map(doc => {
-                const d = doc.data()
-                return {
-                    token: doc.id,
-                    type: "Customer Service",
-                    userName: d.userNama,
-                    nomorHp: d.nomorHp,
-                    status: d.status,
-                    subStatus: d.subStatus,
-                    queueNo: d.queueNo
-                }
-            })
-            set({ customer_service: data })
-        }, (err) => {
-            console.error(err)
-            set({ error: "Gagal load Customer Service" })
-        })
+            const data = snap.docs.map(doc => ({
+                token: doc.id,
+                type: "Customer Service",
+                userName: doc.data().userNama || doc.data().userName,
+                nomorHp: doc.data().nomorHp,
+                status: doc.data().status,
+                subStatus: doc.data().subStatus,
+                queueNo: doc.data().queueNo
+            }));
+            set({ customer_service: data });
+        });
+    },
+
+    getCustomerServiceByToken: async (token: string) => {
+        set({ isLoading: true, error: null, customer_service_detail: null });
+        try {
+            const docSnap = await getDoc(doc(db, "CustomerService", token));
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                const details = d.details || {};
+                set({
+                    customer_service_detail: {
+                        token,
+                        userName: d.userNama || d.userName,
+                        queueNo: d.queueNo,
+                        npwp: d.npwp || "-",
+                        keluhan: details.keluhan || "-"
+                    }
+                });
+            }
+        } finally { set({ isLoading: false }); }
+    },
+
+    updateCustomerServiceHandle: async (token, catatan) => {
+        const { petugas } = get();
+        set({ isLoading: true });
+        try {
+            const docRef = doc(db, "CustomerService", token);
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                await setDoc(doc(db, "history", token), {
+                    ...snap.data(),
+                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+                    subStatus: "Selesai",
+                    status: "inactive",
+                    completedAt: Date.now()
+                });
+                await deleteDoc(docRef);
+            }
+        } finally { set({ isLoading: false }); }
     },
 
     updateCustomerServiceStatus: async (token, status) => {
-        await updateDoc(doc(db, "CustomerService", token), { subStatus: status })
-    }
+        await updateDoc(doc(db, "CustomerService", token), { subStatus: status });
+    },
+}));
 
-}))
-
-export default useQueueStore
+export default useQueueStore;

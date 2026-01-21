@@ -1,13 +1,16 @@
 // features
-import { KPPSidebar, KPPHeader, KPPMain } from "../features/Layout"
+import { KPPSidebar, KPPHeader, KPPMain, KPPModal } from "../features/Layout"
 
 export default function TraderManagementView() {
     return (
-        <div className="w-full flex">
-            <KPPSidebar />
-            <KPPMain>
-                <KPPHeader />
-            </KPPMain>
-        </div>
+        <>
+            <KPPModal />
+            <div className="w-full flex">
+                <KPPSidebar />
+                <KPPMain>
+                    <KPPHeader />
+                </KPPMain>
+            </div>
+        </>
     )
 }
