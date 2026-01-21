@@ -8,6 +8,7 @@ import {
     doc,
     getDoc,
     setDoc,
+    deleteDoc,
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
 
@@ -37,7 +38,7 @@ type LaboratoriumDetail = {
     jenis: string;
     upi: string;
     wa: string;
-}
+};
 
 type CustomerServiceDetail = {
     queueNo: number;
@@ -113,38 +114,25 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
 
     // ================= SMKHP Actions =================
     getSMKHP: () => {
-        // Hanya filter berdasarkan status "active"
-        const q = query(
-            collection(db, "SMKHP"),
-            where("status", "==", "active")
-        );
-
+        const q = query(collection(db, "SMKHP"), where("status", "==", "active"));
         return onSnapshot(q, (snap) => {
-            const data = snap.docs.map(doc => {
-                const d = doc.data();
-                return {
-                    token: doc.id,
-                    type: "SMKHP",
-                    userName: d.userNama || d.userName,
-                    nomorHp: d.nomorHp,
-                    status: d.status,
-                    subStatus: d.subStatus,
-                    queueNo: d.queueNo
-                };
-            });
+            const data = snap.docs.map(doc => ({
+                token: doc.id,
+                type: "SMKHP",
+                userName: doc.data().userNama || doc.data().userName,
+                nomorHp: doc.data().nomorHp,
+                status: doc.data().status,
+                subStatus: doc.data().subStatus,
+                queueNo: doc.data().queueNo
+            }));
             set({ smkhp: data });
-        }, (err) => {
-            console.error(err);
-            set({ error: "Gagal memuat daftar SMKHP" });
         });
     },
 
     getSMKHPByToken: async (token: string) => {
         set({ isLoading: true, error: null, smkhp_detail: null });
         try {
-            const docRef = doc(db, "SMKHP", token);
-            const docSnap = await getDoc(docRef);
-
+            const docSnap = await getDoc(doc(db, "SMKHP", token));
             if (docSnap.exists()) {
                 const d = docSnap.data();
                 set({
@@ -155,70 +143,37 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                         npwp: d.npwp || "-"
                     }
                 });
-            } else {
-                set({ error: "Data SMKHP tidak ditemukan" });
             }
-        } catch (err: any) {
-            set({ error: "Gagal mengambil detail SMKHP" });
-        } finally {
-            set({ isLoading: false });
-        }
+        } catch (err) { set({ error: "Gagal ambil detail SMKHP" }); }
+        finally { set({ isLoading: false }); }
     },
 
     updateSMKHPHandle: async (token, catatan) => {
         const { petugas } = get();
         set({ isLoading: true });
-
         try {
             const docRef = doc(db, "SMKHP", token);
-            const historyRef = doc(db, "history", token);
-
-            const petugasPayload = {
-                nama: petugas.nama,
-                nip: petugas.nip,
-                catatan_petugas: catatan || ''
-            };
-
-            // 1. Update di koleksi asal (SMKHP)
-            await updateDoc(docRef, {
-                petugas: petugasPayload,
-                subStatus: "Selesai"
-            });
-
-            // 2. Ambil data terbaru untuk history
-            const updatedSnap = await getDoc(docRef);
-
-            if (updatedSnap.exists()) {
-                const fullData = updatedSnap.data();
-
-                // 3. Simpan ke koleksi history dengan ID yang sama (token)
-                await setDoc(historyRef, {
-                    ...fullData,
-                    petugas: petugasPayload, // Memastikan data petugas ikut masuk
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                await setDoc(doc(db, "history", token), {
+                    ...snap.data(),
+                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
                     subStatus: "Selesai",
+                    status: "inactive",
                     completedAt: Date.now()
                 });
+                await deleteDoc(docRef);
             }
-        } catch (error) {
-            console.error("Error processing SMKHP to History:", error);
-            set({ error: "Gagal memproses data ke history" });
-            throw error;
-        } finally {
-            set({ isLoading: false });
-        }
+        } finally { set({ isLoading: false }); }
     },
 
     updateSMKHPStatus: async (token, status) => {
         await updateDoc(doc(db, "SMKHP", token), { subStatus: status });
     },
 
-    // ================= LAB & CS Actions =================
+    // ================= Laboratorium Actions =================
     getLaboratorium: () => {
-        // Hanya filter berdasarkan status "active"
-        const q = query(
-            collection(db, "LAB"),
-            where("status", "==", "active")
-        );
+        const q = query(collection(db, "LAB"), where("status", "==", "active"));
         return onSnapshot(q, (snap) => {
             const data = snap.docs.map(doc => ({
                 token: doc.id,
@@ -233,94 +188,54 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
         });
     },
 
-    updateLaboratoriumStatus: async (token, status) => {
-        await updateDoc(doc(db, "LAB", token), { subStatus: status });
-    },
-
     getLaboratoriumByToken: async (token: string) => {
         set({ isLoading: true, error: null, laboratorium_detail: null });
         try {
-            const docRef = doc(db, "LAB", token);
-            const docSnap = await getDoc(docRef);
-
+            const docSnap = await getDoc(doc(db, "LAB", token));
             if (docSnap.exists()) {
                 const d = docSnap.data();
-                // Mengambil data dari dalam map 'details' sesuai struktur JSON Anda
                 const details = d.details || {};
-
                 set({
                     laboratorium_detail: {
-                        token: token,
+                        token,
                         userName: d.userNama || d.userName || "No Name",
-                        queueNo: d.queueNo || 0,
+                        queueNo: d.queueNo,
                         npwp: d.npwp || "-",
-                        // Field khusus Laboratorium dari dalam map details
                         jenis: details.jenis || "-",
                         upi: details.upi || "-",
                         wa: details.wa || d.nomorHp || "-"
                     }
                 });
-            } else {
-                set({ error: "Data Laboratorium tidak ditemukan" });
             }
-        } catch (err: any) {
-            console.error("Error fetching LAB detail:", err);
-            set({ error: "Gagal mengambil detail Laboratorium" });
-        } finally {
-            set({ isLoading: false });
-        }
+        } finally { set({ isLoading: false }); }
     },
 
     updateLaboratoriumHandle: async (token, catatan) => {
         const { petugas } = get();
-        set({ isLoading: true, error: null });
-
+        set({ isLoading: true });
         try {
             const docRef = doc(db, "LAB", token);
-            const historyRef = doc(db, "history", token);
-
-            const petugasPayload = {
-                nama: petugas.nama,
-                nip: petugas.nip,
-                catatan_petugas: catatan || ''
-            };
-
-            // 1. Update di koleksi LAB
-            await updateDoc(docRef, {
-                petugas: petugasPayload,
-                subStatus: "Selesai",
-                status: "inactive"
-            });
-
-            // 2. Ambil data terbaru untuk dipindah ke history
-            const updatedSnap = await getDoc(docRef);
-
-            if (updatedSnap.exists()) {
-                const fullData = updatedSnap.data();
-
-                // 3. Simpan ke koleksi history
-                await setDoc(historyRef, {
-                    ...fullData,
-                    petugas: petugasPayload,
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                await setDoc(doc(db, "history", token), {
+                    ...snap.data(),
+                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
                     subStatus: "Selesai",
+                    status: "inactive",
                     completedAt: Date.now()
                 });
+                await deleteDoc(docRef);
             }
-        } catch (error) {
-            console.error("Error processing LAB to History:", error);
-            set({ error: "Gagal memproses data LAB ke history" });
-            throw error;
-        } finally {
-            set({ isLoading: false });
-        }
+        } finally { set({ isLoading: false }); }
     },
 
+    updateLaboratoriumStatus: async (token, status) => {
+        await updateDoc(doc(db, "LAB", token), { subStatus: status });
+    },
+
+    // ================= Customer Service Actions =================
     getCustomerService: () => {
-        // Hanya filter berdasarkan status "active"
-        const q = query(
-            collection(db, "CustomerService"),
-            where("status", "==", "active")
-        );
+        const q = query(collection(db, "CustomerService"), where("status", "==", "active"));
         return onSnapshot(q, (snap) => {
             const data = snap.docs.map(doc => ({
                 token: doc.id,
@@ -335,84 +250,47 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
         });
     },
 
-    // ================= Customer Service Handle =================
-    updateCustomerServiceHandle: async (token, catatan) => {
-        const { petugas } = get();
-        set({ isLoading: true, error: null });
-
-        try {
-            const docRef = doc(db, "CustomerService", token);
-            const historyRef = doc(db, "history", token);
-
-            const petugasPayload = {
-                nama: petugas.nama,
-                nip: petugas.nip,
-                catatan_petugas: catatan || ''
-            };
-
-            // 1. Update status dan data petugas di koleksi CustomerService
-            await updateDoc(docRef, {
-                petugas: petugasPayload,
-                subStatus: "Selesai",
-                status: "inactive" // Biasanya diubah ke inactive agar hilang dari antrean aktif
-            });
-
-            // 2. Ambil snapshot data terbaru setelah update
-            const updatedSnap = await getDoc(docRef);
-
-            if (updatedSnap.exists()) {
-                const fullData = updatedSnap.data();
-
-                // 3. Simpan ke koleksi history dengan ID dokumen yang sama (token)
-                await setDoc(historyRef, {
-                    ...fullData,
-                    petugas: petugasPayload,
-                    subStatus: "Selesai",
-                    completedAt: Date.now()
-                });
-            }
-        } catch (error) {
-            console.error("Error processing Customer Service to History:", error);
-            set({ error: "Gagal memproses data CS ke history" });
-            throw error;
-        } finally {
-            set({ isLoading: false });
-        }
-    },
-
-    updateCustomerServiceStatus: async (token, status) => {
-        await updateDoc(doc(db, "CustomerService", token), { subStatus: status });
-    },
-
     getCustomerServiceByToken: async (token: string) => {
         set({ isLoading: true, error: null, customer_service_detail: null });
         try {
-            const docRef = doc(db, "CustomerService", token);
-            const docSnap = await getDoc(docRef);
-
+            const docSnap = await getDoc(doc(db, "CustomerService", token));
             if (docSnap.exists()) {
                 const d = docSnap.data();
-                // Mengambil data dari dalam map 'details' sesuai struktur JSON Anda
                 const details = d.details || {};
-
                 set({
                     customer_service_detail: {
-                        token: token,
-                        userName: d.userNama || d.userName || "No Name",
-                        queueNo: d.queueNo || 0,
+                        token,
+                        userName: d.userNama || d.userName,
+                        queueNo: d.queueNo,
                         npwp: d.npwp || "-",
                         keluhan: details.keluhan || "-"
                     }
                 });
-            } else {
-                set({ error: "Data Customer Service tidak ditemukan" });
             }
-        } catch (err: any) {
-            console.error("Error fetching CS detail:", err);
-            set({ error: "Gagal mengambil detail Customer Service" });
-        } finally {
-            set({ isLoading: false });
-        }
+        } finally { set({ isLoading: false }); }
+    },
+
+    updateCustomerServiceHandle: async (token, catatan) => {
+        const { petugas } = get();
+        set({ isLoading: true });
+        try {
+            const docRef = doc(db, "CustomerService", token);
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+                await setDoc(doc(db, "history", token), {
+                    ...snap.data(),
+                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+                    subStatus: "Selesai",
+                    status: "inactive",
+                    completedAt: Date.now()
+                });
+                await deleteDoc(docRef);
+            }
+        } finally { set({ isLoading: false }); }
+    },
+
+    updateCustomerServiceStatus: async (token, status) => {
+        await updateDoc(doc(db, "CustomerService", token), { subStatus: status });
     },
 }));
 
