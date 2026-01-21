@@ -8,7 +8,6 @@ import {
     doc,
     getDoc,
     setDoc,
-    deleteDoc,
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
 
@@ -70,20 +69,15 @@ type QueueAction = {
     getSMKHP: () => () => void;
     getLaboratorium: () => () => void;
     getCustomerService: () => () => void;
-
     getSMKHPByToken: (token: string) => Promise<void>;
     getLaboratoriumByToken: (token: string) => Promise<void>;
     getCustomerServiceByToken: (token: string) => Promise<void>;
-
     updateSMKHPHandle: (token: string, catatan?: string) => Promise<void>;
     updateSMKHPStatus: (token: string, status: string) => Promise<void>;
-
     updateLaboratoriumHandle: (token: string, catatan?: string) => Promise<void>;
     updateLaboratoriumStatus: (token: string, status: string) => Promise<void>;
-
     updateCustomerServiceHandle: (token: string, catatan?: string) => Promise<void>;
     updateCustomerServiceStatus: (token: string, status: string) => Promise<void>;
-
     setPetugas: (nama: string, nip: string) => void;
     setField: <K extends keyof QueueState>(key: K, value: QueueState[K]) => void;
 };
@@ -144,7 +138,7 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                     }
                 });
             }
-        } catch (err) { set({ error: "Gagal ambil detail SMKHP" }); }
+        } catch (err) { set({ error: "Gagal ambil detail" }); }
         finally { set({ isLoading: false }); }
     },
 
@@ -153,17 +147,22 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
         set({ isLoading: true });
         try {
             const docRef = doc(db, "SMKHP", token);
+            // 1. Update Dokumen Aktif (Jangan dihapus agar user bisa rating)
+            await updateDoc(docRef, {
+                petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+                subStatus: "Selesai",
+                // Tetap "active" agar aplikasi mobile masih bisa memantau dokumen ini
+                status: "active", 
+                updatedAt: Date.now()
+            });
+
+            // 2. Salin snapshot ke history (Opsional: sebagai backup)
             const snap = await getDoc(docRef);
             if (snap.exists()) {
-                await setDoc(doc(db, "history", token), {
-                    ...snap.data(),
-                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
-                    subStatus: "Selesai",
-                    status: "inactive",
-                    completedAt: Date.now()
-                });
-                await deleteDoc(docRef);
+                await setDoc(doc(db, "history", token), snap.data());
             }
+        } catch (err) {
+            set({ error: "Gagal memproses data" });
         } finally { set({ isLoading: false }); }
     },
 
@@ -198,7 +197,7 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                 set({
                     laboratorium_detail: {
                         token,
-                        userName: d.userNama || d.userName || "No Name",
+                        userName: d.userNama || d.userName,
                         queueNo: d.queueNo,
                         npwp: d.npwp || "-",
                         jenis: details.jenis || "-",
@@ -215,16 +214,15 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
         set({ isLoading: true });
         try {
             const docRef = doc(db, "LAB", token);
+            await updateDoc(docRef, {
+                petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+                subStatus: "Selesai",
+                status: "active",
+                updatedAt: Date.now()
+            });
             const snap = await getDoc(docRef);
             if (snap.exists()) {
-                await setDoc(doc(db, "history", token), {
-                    ...snap.data(),
-                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
-                    subStatus: "Selesai",
-                    status: "inactive",
-                    completedAt: Date.now()
-                });
-                await deleteDoc(docRef);
+                await setDoc(doc(db, "history", token), snap.data());
             }
         } finally { set({ isLoading: false }); }
     },
@@ -275,16 +273,15 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
         set({ isLoading: true });
         try {
             const docRef = doc(db, "CustomerService", token);
+            await updateDoc(docRef, {
+                petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+                subStatus: "Selesai",
+                status: "active",
+                updatedAt: Date.now()
+            });
             const snap = await getDoc(docRef);
             if (snap.exists()) {
-                await setDoc(doc(db, "history", token), {
-                    ...snap.data(),
-                    petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
-                    subStatus: "Selesai",
-                    status: "inactive",
-                    completedAt: Date.now()
-                });
-                await deleteDoc(docRef);
+                await setDoc(doc(db, "history", token), snap.data());
             }
         } finally { set({ isLoading: false }); }
     },
