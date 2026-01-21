@@ -46,6 +46,7 @@ export default function SMKHPQueueDetail({ token }: { token: string }) {
     }
 
     const handleComplete = async (e: React.FormEvent) => {
+        e.preventDefault();
         try {
             // updateSMKHPHandle akan secara internal mengambil petugas.nama dan petugas.nip dari state
             await updateSMKHPHandle(smkhp_detail.token, petugas.catatan_petugas);
