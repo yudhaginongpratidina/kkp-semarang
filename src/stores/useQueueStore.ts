@@ -146,21 +146,21 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
         const { petugas } = get();
         set({ isLoading: true });
         try {
-            const docRef = doc(db, "SMKHP", token);
-            // 1. Update Dokumen Aktif (Jangan dihapus agar user bisa rating)
-            await updateDoc(docRef, {
-                petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+            // 1. Update Status di collection SMKHP
+            await updateDoc(doc(db, "SMKHP", token), {
                 subStatus: "Selesai",
-                // Tetap "active" agar aplikasi mobile masih bisa memantau dokumen ini
                 status: "active", 
                 updatedAt: Date.now()
             });
 
-            // 2. Salin snapshot ke history (Opsional: sebagai backup)
-            const snap = await getDoc(docRef);
-            if (snap.exists()) {
-                await setDoc(doc(db, "history", token), snap.data());
-            }
+            // 2. Simpan catatan petugas ke collection 'officer_notes'
+            await setDoc(doc(db, "officer_notes", token), {
+                nama_petugas: petugas.nama,
+                nip_petugas: petugas.nip,
+                catatan: catatan || "",
+                layanan: "SMKHP",
+                timestamp: Date.now()
+            });
         } catch (err) {
             set({ error: "Gagal memproses data" });
         } finally { set({ isLoading: false }); }
@@ -213,17 +213,21 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
         const { petugas } = get();
         set({ isLoading: true });
         try {
-            const docRef = doc(db, "LAB", token);
-            await updateDoc(docRef, {
-                petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+            await updateDoc(doc(db, "LAB", token), {
                 subStatus: "Selesai",
                 status: "active",
                 updatedAt: Date.now()
             });
-            const snap = await getDoc(docRef);
-            if (snap.exists()) {
-                await setDoc(doc(db, "history", token), snap.data());
-            }
+
+            await setDoc(doc(db, "officer_notes", token), {
+                nama_petugas: petugas.nama,
+                nip_petugas: petugas.nip,
+                catatan: catatan || "",
+                layanan: "Laboratorium",
+                timestamp: Date.now()
+            });
+        } catch (err) {
+            set({ error: "Gagal memproses data" });
         } finally { set({ isLoading: false }); }
     },
 
@@ -272,17 +276,21 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
         const { petugas } = get();
         set({ isLoading: true });
         try {
-            const docRef = doc(db, "CustomerService", token);
-            await updateDoc(docRef, {
-                petugas: { nama: petugas.nama, nip: petugas.nip, catatan_petugas: catatan || "" },
+            await updateDoc(doc(db, "CustomerService", token), {
                 subStatus: "Selesai",
                 status: "active",
                 updatedAt: Date.now()
             });
-            const snap = await getDoc(docRef);
-            if (snap.exists()) {
-                await setDoc(doc(db, "history", token), snap.data());
-            }
+
+            await setDoc(doc(db, "officer_notes", token), {
+                nama_petugas: petugas.nama,
+                nip_petugas: petugas.nip,
+                catatan: catatan || "",
+                layanan: "Customer Service",
+                timestamp: Date.now()
+            });
+        } catch (err) {
+            set({ error: "Gagal memproses data" });
         } finally { set({ isLoading: false }); }
     },
 

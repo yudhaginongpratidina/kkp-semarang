@@ -7,7 +7,7 @@ interface TextFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
     id: string
     label: string
     required: boolean
-    type: "text" | "email" | "password"
+    type: "text" | "email" | "password" | "date" | "time" | "datetime-local";
     controller: {
         value: string
         onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
