@@ -66,16 +66,8 @@ export default function TraderTable() {
     };
     
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="max-w-6xl mx-auto bg-white p-6 rounded-sm shadow-sm border border-gray-200">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800">Data Master Trader</h2>
-                    <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-sm">
-                        Total: <span className="font-semibold text-gray-700">{filteredData.length}</span> Baris
-                    </div>
-                </div>
-                
+        <div className="w-full p-4">
+            <div className=" bg-white p-6 rounded-sm shadow-sm border border-gray-200">
                 {/* Filter Section */}
                 <div className="flex flex-col md:flex-row gap-3 mb-6">
                     <div className="relative flex-1">
@@ -83,7 +75,7 @@ export default function TraderTable() {
                         <input
                             type="text"
                             placeholder={`Cari ${filterType.replace("_", " ")}...`}
-                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-sm outline-none transition-all"
                             value={searchTerm}
                             onChange={handleSearch}
                         />
@@ -97,12 +89,15 @@ export default function TraderTable() {
                         <option value="kode_trader">Kode Trader</option>
                         <option value="npwp">NPWP</option>
                     </select>
+                    <button className="p-4 py-2.5 border border-gray-300 rounded-sm">
+                        Tambah
+                    </button>
                 </div>
                 
                 {/* Table Section */}
                 <div className="overflow-x-auto border border-gray-200 rounded-sm shadow-sm">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 text-xs uppercase tracking-wide">
+                        <thead className="bg-linear-to-r from-gray-50 to-gray-100 text-gray-700 text-xs uppercase tracking-wide">
                             <tr>
                                 <th className="p-4 font-semibold border-b border-gray-200">Kode</th>
                                 <th className="p-4 font-semibold border-b border-gray-200">Nama Trader</th>

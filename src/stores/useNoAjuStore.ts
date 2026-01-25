@@ -1,44 +1,32 @@
 import { create } from "zustand";
-import {
-    collection,
-    query,
-    where,
-    getDocs,
-    doc,
-    updateDoc,
-    Timestamp
-} from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../configs/firebase";
 
-// Definisi tipe data untuk state NoAju
-export type NoAjuData = {
+// Interface tunggal yang akan digunakan di seluruh aplikasi
+export interface NoAjuItem {
     noAju: string;
-    expiredAju: any;
-};
+    expiredAju: string; // Format: YYYY-MM-DDTHH:mm
+}
 
 export type NoAjuState = {
-    noAju: ""
-    currentNoAju: NoAjuData | null;
+    noAjuItems: NoAjuItem[];
     loading: boolean;
     error: string | null;
 };
 
 type NoAjuAction = {
-    setField: <K extends keyof NoAjuData>(key: K, value: NoAjuData[K]) => void
-    upsert_no_aju: (uid: string, noAju: string) => Promise<void>;
+    setNoAjuItems: (items: NoAjuItem[]) => void;
+    upsert_no_aju: (uid: string, items: NoAjuItem[]) => Promise<void>;
     get_no_aju_by_uid: (uid: string) => Promise<void>;
 };
 
 export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
-    noAju: "",
-    currentNoAju: null,
+    noAjuItems: [{ noAju: "", expiredAju: "" }],
     loading: false,
     error: null,
 
-    // Set field dinamis
-    setField: (key, value) => set({ [key]: value } as Partial<NoAjuState>),
+    setNoAjuItems: (items) => set({ noAjuItems: items }),
 
-    // Fungsi untuk mengambil data NoAju berdasarkan UID
     get_no_aju_by_uid: async (uid: string) => {
         set({ loading: true, error: null });
         try {
@@ -48,18 +36,9 @@ export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
 
             if (!querySnapshot.empty) {
                 const userData = querySnapshot.docs[0].data();
-                if (userData.noAju) {
-                    set({
-                        currentNoAju: {
-                            noAju: userData.noAju,
-                            expiredAju: userData.expiredAju
-                        }
-                    });
-                } else {
-                    set({ currentNoAju: null });
+                if (userData.noAjuList) {
+                    set({ noAjuItems: userData.noAjuList });
                 }
-            } else {
-                set({ currentNoAju: null });
             }
         } catch (err: any) {
             set({ error: err.message });
@@ -68,8 +47,7 @@ export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
         }
     },
 
-    // Fungsi untuk create/update No Aju dengan expired 6 bulan
-    upsert_no_aju: async (uid, noAju) => {
+    upsert_no_aju: async (uid, items) => {
         set({ loading: true, error: null });
         try {
             const usersRef = collection(db, "users");
@@ -78,24 +56,16 @@ export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
 
             if (querySnapshot.empty) throw new Error("User tidak ditemukan.");
 
-            const userDoc = querySnapshot.docs[0];
-            const userDocRef = doc(db, "users", userDoc.id);
-
-            // Hitung expired 6 bulan
-            const today = new Date();
-            const expiredDate = new Date(today.setMonth(today.getMonth() + 6));
-            const expiredTimestamp = Timestamp.fromDate(expiredDate);
-
+            const userDocRef = doc(db, "users", querySnapshot.docs[0].id);
             await updateDoc(userDocRef, {
-                noAju: noAju,
-                expiredAju: expiredTimestamp
+                noAjuList: items,
+                updatedAt: new Date().toISOString()
             });
 
-            // Update state lokal agar UI langsung berubah
-            set({ currentNoAju: { noAju, expiredAju: expiredTimestamp } });
-
+            set({ noAjuItems: items });
         } catch (err: any) {
             set({ error: err.message });
+            throw err;
         } finally {
             set({ loading: false });
         }
