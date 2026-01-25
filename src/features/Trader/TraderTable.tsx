@@ -1,29 +1,27 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FiSearch, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiX } from "react-icons/fi";
-import { useTraderStore } from "../../stores";
+import { FiSearch, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight} from "react-icons/fi";
+import TraderForm from "./TraderForm";
+import { useTraderStore, useModalStore } from "../../stores";
 import { type Trader } from "../../stores/useTraderStore";
 
 export default function TraderTable() {
-    const { traders, getTraders, deleteTrader, updateTrader, isLoading } = useTraderStore();
-    
+    const { traders, getTraders, deleteTrader, isLoading } = useTraderStore();
+    const { open } = useModalStore();
+
     // State untuk Filter
     const [searchTerm, setSearchTerm] = useState("");
     const [filterType, setFilterType] = useState<keyof Pick<Trader, "nama_trader" | "kode_trader" | "npwp">>("nama_trader");
-    
+
     // State untuk Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
-    
-    // State untuk Modal Edit
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [selectedTrader, setSelectedTrader] = useState<Trader | null>(null);
-    
+
     // 1. Inisialisasi Data Realtime
     useEffect(() => {
         const unsubscribe = getTraders();
         return () => unsubscribe();
     }, [getTraders]);
-    
+
     // 2. Logika Filter (useMemo untuk performa)
     const filteredData = useMemo(() => {
         return traders.filter((item) => {
@@ -31,7 +29,7 @@ export default function TraderTable() {
             return value.includes(searchTerm.toLowerCase());
         });
     }, [traders, searchTerm, filterType]);
-    
+
     // 3. Logika Pagination
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const currentItems = useMemo(() => {
@@ -39,32 +37,19 @@ export default function TraderTable() {
         const firstIndex = lastIndex - itemsPerPage;
         return filteredData.slice(firstIndex, lastIndex);
     }, [filteredData, currentPage, itemsPerPage]);
-    
+
     // 4. Handlers
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
         setCurrentPage(1);
     };
-    
+
     const handleDelete = async (id: string) => {
         if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
             await deleteTrader(id);
         }
     };
-    
-    const handleEditOpen = (trader: Trader) => {
-        setSelectedTrader({ ...trader });
-        setIsEditModalOpen(true);
-    };
-    
-    const handleUpdateSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (selectedTrader) {
-            await updateTrader(selectedTrader.id, selectedTrader);
-            setIsEditModalOpen(false);
-        }
-    };
-    
+
     return (
         <div className="w-full p-4">
             <div className=" bg-white p-6 rounded-sm shadow-sm border border-gray-200">
@@ -89,11 +74,17 @@ export default function TraderTable() {
                         <option value="kode_trader">Kode Trader</option>
                         <option value="npwp">NPWP</option>
                     </select>
-                    <button className="p-4 py-2.5 border border-gray-300 rounded-sm">
+                    <button
+                        onClick={() => open({
+                            title: "Tambah",
+                            content: <TraderForm type="create" />,
+                            size: "lg",
+                        })}
+                        className="p-4 py-2.5 border border-gray-300 rounded-sm">
                         Tambah
                     </button>
                 </div>
-                
+
                 {/* Table Section */}
                 <div className="overflow-x-auto border border-gray-200 rounded-sm shadow-sm">
                     <table className="w-full text-left border-collapse">
@@ -128,7 +119,11 @@ export default function TraderTable() {
                                         <td className="p-4">
                                             <div className="flex justify-center gap-2">
                                                 <button
-                                                    onClick={() => handleEditOpen(trader)}
+                                                    onClick={() => open({
+                                                        title: "Edit",
+                                                        content: <TraderForm id={trader.id} type="update" />,
+                                                        size: "lg",
+                                                    })}
                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-sm text-xs font-medium hover:bg-amber-200 transition-colors"
                                                 >
                                                     <FiEdit2 size={14} />
@@ -155,7 +150,7 @@ export default function TraderTable() {
                         </tbody>
                     </table>
                 </div>
-                
+
                 {/* Pagination Section */}
                 <div className="mt-6 flex flex-col md:flex-row justify-between items-center gap-4">
                     <p className="text-sm text-gray-600">
@@ -182,93 +177,6 @@ export default function TraderTable() {
                     </div>
                 </div>
             </div>
-            
-            {/* MODAL EDIT */}
-            {isEditModalOpen && selectedTrader && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg overflow-hidden">
-                        {/* Modal Header */}
-                        <div className="p-6 border-b border-gray-200 bg-linear-to-r from-blue-50 to-blue-100 flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-gray-800">Perbarui Data Trader</h3>
-                            <button
-                                onClick={() => setIsEditModalOpen(false)}
-                                className="text-gray-500 hover:text-gray-700 transition-colors"
-                            >
-                                <FiX size={22} />
-                            </button>
-                        </div>
-                        
-                        {/* Modal Body */}
-                        <form onSubmit={handleUpdateSubmit} className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1.5">
-                                        Kode Trader
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                                        value={selectedTrader.kode_trader}
-                                        onChange={(e) => setSelectedTrader({ ...selectedTrader, kode_trader: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-600 uppercase mb-1.5">
-                                        NPWP
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        value={selectedTrader.npwp}
-                                        onChange={(e) => setSelectedTrader({ ...selectedTrader, npwp: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 uppercase mb-1.5">
-                                    Nama Trader
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    value={selectedTrader.nama_trader}
-                                    onChange={(e) => setSelectedTrader({ ...selectedTrader, nama_trader: e.target.value })}
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-xs font-bold text-gray-600 uppercase mb-1.5">
-                                    Alamat Lengkap
-                                </label>
-                                <textarea
-                                    rows={3}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                    value={selectedTrader.alamat_trader}
-                                    onChange={(e) => setSelectedTrader({ ...selectedTrader, alamat_trader: e.target.value })}
-                                />
-                            </div>
-                            
-                            {/* Modal Footer */}
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditModalOpen(false)}
-                                    className="px-5 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-sm transition-colors"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded-sm hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
-                                >
-                                    Simpan Perubahan
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
