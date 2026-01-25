@@ -188,7 +188,7 @@ export default function TraderTable() {
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg overflow-hidden">
                         {/* Modal Header */}
-                        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100 flex justify-between items-center">
+                        <div className="p-6 border-b border-gray-200 bg-linear-to-r from-blue-50 to-blue-100 flex justify-between items-center">
                             <h3 className="text-lg font-bold text-gray-800">Perbarui Data Trader</h3>
                             <button
                                 onClick={() => setIsEditModalOpen(false)}
