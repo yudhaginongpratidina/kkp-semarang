@@ -3,3 +3,4 @@ export { default as useUserRoleManagementStore } from './useUserRoleManagementSt
 export { default as useHistoryStore } from './useHistoryStore'
 export { default as useQueueStore } from './useQueueStore'
 export { default as useModalStore } from './useModalStore'
+export { default as useTraderStore } from './useTraderStore'

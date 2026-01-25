@@ -1,5 +1,6 @@
 // features
 import { KPPSidebar, KPPHeader, KPPMain, KPPModal } from "../features/Layout"
+import { TraderTable } from "../features/Trader"
 
 export default function TraderManagementView() {
     return (
@@ -9,6 +10,7 @@ export default function TraderManagementView() {
                 <KPPSidebar />
                 <KPPMain>
                     <KPPHeader />
+                    <TraderTable />
                 </KPPMain>
             </div>
         </>
