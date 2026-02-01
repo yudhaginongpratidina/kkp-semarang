@@ -110,7 +110,7 @@ export default function DetailHistory() {
                                         </h2>
                                         <p className="text-blue-100 text-sm">Data lengkap pengguna terdaftar</p>
                                     </div>
-                                    {(!user?.noAju || user?.noAju === "-") ? (
+                                    {(!user?.noAjuList || user?.noAjuList === "-") ? (
                                         <button
                                             type="button"
                                             onClick={() => open({

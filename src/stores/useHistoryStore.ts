@@ -37,7 +37,7 @@ export type User = {
     namaTrader?: string;
     alamatTrader?: string;
     email?: string;
-    noAju?: string;
+    noAjuList?: string;
 };
 
 export type History = {
