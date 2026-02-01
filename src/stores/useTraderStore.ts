@@ -59,7 +59,7 @@ const useTraderStore = create<TraderState & TraderAction>((set) => ({
                 ...doc.data(),
             })) as Trader[];
             set({ traders: data, isLoading: false });
-        }, (err) => {
+        }, () => {
             set({ error: "Gagal mengambil data", isLoading: false });
         });
         return unsubscribe;
