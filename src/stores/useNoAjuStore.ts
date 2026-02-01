@@ -2,10 +2,9 @@ import { create } from "zustand";
 import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "../configs/firebase";
 
-// Interface tunggal yang akan digunakan di seluruh aplikasi
 export interface NoAjuItem {
     noAju: string;
-    expiredAju: string; // Format: YYYY-MM-DDTHH:mm
+    expiredAju: string;
 }
 
 export type NoAjuState = {
@@ -18,6 +17,7 @@ type NoAjuAction = {
     setNoAjuItems: (items: NoAjuItem[]) => void;
     upsert_no_aju: (uid: string, items: NoAjuItem[]) => Promise<void>;
     get_no_aju_by_uid: (uid: string) => Promise<void>;
+    resetStore: () => void;
 };
 
 export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
@@ -26,6 +26,8 @@ export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
     error: null,
 
     setNoAjuItems: (items) => set({ noAjuItems: items }),
+
+    resetStore: () => set({ noAjuItems: [{ noAju: "", expiredAju: "" }], error: null }),
 
     get_no_aju_by_uid: async (uid: string) => {
         set({ loading: true, error: null });
@@ -36,8 +38,11 @@ export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
 
             if (!querySnapshot.empty) {
                 const userData = querySnapshot.docs[0].data();
-                if (userData.noAjuList) {
+                // Cek apakah noAjuList ada dan bukan array kosong
+                if (userData.noAjuList && Array.isArray(userData.noAjuList) && userData.noAjuList.length > 0) {
                     set({ noAjuItems: userData.noAjuList });
+                } else {
+                    set({ noAjuItems: [{ noAju: "", expiredAju: "" }] });
                 }
             }
         } catch (err: any) {
