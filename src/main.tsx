@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider } from "react-router-dom"
 import { createBrowserRouter } from "react-router-dom"
+import { Toaster } from 'sonner';
 
 // middlewares
 import AuthGuard from './middlewares/AuthGuard'
@@ -24,7 +25,7 @@ const router = createBrowserRouter([
 	// halaman guest → publicOnly
 	{ path: "/", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
 	{ path: "/login", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
-	{ path: "/create-account", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
+	// { path: "/create-account", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
 
 	// dashboard → hanya user login
 	{ path: "/dashboard", element: <AuthGuard><DashboardView /></AuthGuard> },
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
 // render
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
+		<Toaster position="top-center" />
 		<RouterProvider router={router} />
 	</StrictMode>,
 )

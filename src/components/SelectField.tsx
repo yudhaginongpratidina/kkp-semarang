@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ZodType } from "zod";
+import { FaChevronDown } from "react-icons/fa"; // Gunakan icon yang konsisten
 
 interface SelectFieldProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
     id: string;
@@ -24,7 +25,6 @@ export default function SelectField({
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         if (!touched) setTouched(true);
-
         const val = e.target.value;
         controller.onChange(e);
 
@@ -40,31 +40,35 @@ export default function SelectField({
 
     const isBlocked = disabled || loading;
 
-    // Logika styling yang sama dengan TextField kamu
+    // Styling Logic - Industrial Gray (Sesuai TextField)
     const borderClass = !touched
-        ? "border-slate-300"
+        ? "border-slate-300 focus-within:border-slate-800"
         : error
-            ? "border-red-500 focus:border-red-500"
-            : "border-blue-500 focus:border-blue-500";
-
-    const iconClass = icon ? "pl-10" : "";
+            ? "border-red-500"
+            : "border-slate-800 focus-within:ring-1 focus-within:ring-slate-800";
 
     return (
-        <div className="w-full flex flex-col gap-1">
-            <label htmlFor={id} className="capitalize flex items-center gap-1 font-semibold text-sm">
-                <span className={error && touched ? "text-red-500" : "text-black"}>
-                    {label}
-                </span>
-                {required && <span className="text-red-500">*</span>}
-            </label>
+        <div className="w-full flex flex-col gap-1 font-mono">
+            {/* Technical Header Label */}
+            <div className="flex justify-between items-end px-1">
+                <label htmlFor={id} className="text-[10px] uppercase tracking-widest font-bold text-slate-500 flex items-center gap-1">
+                    <span className={error && touched ? "text-red-500" : ""}>{label}</span>
+                    {required && <span className="text-red-500 text-[8px]">●</span>}
+                </label>
+                {error && touched && (
+                    <span className="text-[9px] text-red-500 font-bold animate-pulse uppercase">Invalid_Selection</span>
+                )}
+            </div>
 
-            <div className="w-full relative">
+            <div className={`relative flex items-center transition-all duration-200 border rounded-sm overflow-hidden ${borderClass} ${isBlocked ? "bg-slate-200" : "bg-white"}`}>
+                
+                {/* Prefix Icon Section */}
                 {icon && (
-                    <div className="w-10 h-10 absolute top-0 left-0 flex justify-center items-center text-slate-400 pointer-events-none z-10">
+                    <div className="w-10 h-10 flex justify-center items-center border-r border-slate-200 text-slate-400 bg-slate-50">
                         {icon}
                     </div>
                 )}
-                
+
                 <select
                     id={id}
                     name={id}
@@ -73,26 +77,34 @@ export default function SelectField({
                     onChange={handleChange}
                     disabled={isBlocked}
                     required={required}
-                    className={`w-full h-10 px-2 border rounded-sm outline-none transition appearance-none ${iconClass} ${borderClass} ${
-                        isBlocked ? "bg-slate-200 cursor-not-allowed text-slate-400" : "bg-slate-100"
-                    }`}
+                    className={`
+                        w-full h-10 px-3 text-sm font-bold bg-transparent outline-none text-slate-800 
+                        appearance-none cursor-pointer
+                        ${isBlocked ? "cursor-not-allowed text-slate-400" : ""}
+                    `}
                 >
-                    <option value="" disabled>-- Pilih {label} --</option>
+                    <option value="" disabled className="text-slate-400">-- SELECT_{label.toUpperCase()} --</option>
                     {options.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
+                        <option key={opt.value} value={opt.value} className="text-slate-800 font-sans">
                             {opt.label}
                         </option>
                     ))}
                 </select>
-                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-400">
-                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                    </svg>
+
+                {/* Custom Chevron - Tech Style */}
+                <div className="absolute right-0 top-0 h-full w-10 flex justify-center items-center pointer-events-none border-l border-slate-100 bg-slate-50/50">
+                    <FaChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-300 ${isBlocked ? "opacity-30" : ""}`} />
                 </div>
+
+                {/* Decorative Tech Bar (Sisi Kanan) */}
+                <div className={`absolute right-0 top-0 h-full w-1 transition-all ${error && touched ? "bg-red-500" : "bg-transparent"}`}></div>
             </div>
 
+            {/* Error Message - CLI Style */}
             {error && touched && (
-                <span className="text-xs text-red-500">{error}</span>
+                <span className="text-[10px] text-red-600 bg-red-50 px-2 py-0.5 rounded-sm font-bold mt-1">
+                    {`>> SELECT_ERR: ${error.toUpperCase()}`}
+                </span>
             )}
         </div>
     );

@@ -17,7 +17,7 @@ export const formatTanggalLengkap = (dateInput: any) => {
 
     const hari = String(d.getDate()).padStart(2, '0');
     const bulanDaftar = [
-        "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
         "Juli", "Agustus", "September", "Oktober", "November", "Desember"
     ];
     const bulan = bulanDaftar[d.getMonth()];
@@ -49,11 +49,15 @@ export type History = {
     uid: string;
     rating: number;
     queueNo: number;
-    comment: string;
+    comment: {
+        feedback: string;
+        stars: number;
+        timestamp: string;
+    } | null;
     details?: {
-        keluhan?: string; 
-        jenis?: string;   
-        upi?: string;     
+        keluhan?: string;
+        jenis?: string;
+        upi?: string;
         noAju?: string;
         tanggal?: string;
         jam?: string;
@@ -136,7 +140,7 @@ const useHistoryStore = create<HistoryState>((set) => ({
             const historyRef = collection(db, "history");
             const q = query(historyRef, where("uid", "==", uid));
             const snap = await getDocs(q);
-            
+
             const historyData = snap.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -167,7 +171,7 @@ const useHistoryStore = create<HistoryState>((set) => ({
 
             // 3. Urutkan berdasarkan timestamp terbaru
             historiesWithOfficer.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
-            
+
             set({ histories: historiesWithOfficer });
         } catch (err: any) {
             console.error("Error history:", err);

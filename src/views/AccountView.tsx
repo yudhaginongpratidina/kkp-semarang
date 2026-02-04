@@ -8,7 +8,7 @@ export default function AccountView() {
             <KPPSidebar />
             <KPPMain>
                 <KPPHeader />
-                <div className="w-full flex flex-col gap-4">
+                <div className="w-full flex flex-col gap-4 p-4">
                     <AccountIfoForm />
                     <AccountPasswordForm />
                 </div>

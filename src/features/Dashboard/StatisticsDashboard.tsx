@@ -1,296 +1,141 @@
-import { useEffect } from "react"
-import { FaUsers, FaCheckCircle, FaClock, FaSpinner } from "react-icons/fa"
+// libraries
+import { useEffect, useMemo } from "react"
+import { FaUsers, FaClock, FaSpinner, FaChartLine, FaExclamationTriangle } from "react-icons/fa"
 import { useQueueStore, useAuthStore } from "../../stores"
 
-// =====================
-// COMPONENT
-// =====================
 export default function StatisticsDashboard() {
     const {
-        smkhp,
-        laboratorium,
-        customer_service,
-        isLoading,
-        error,
-        getSMKHP,
-        getLaboratorium,
-        getCustomerService
+        smkhp, laboratorium, customer_service,
+        isLoading, error, getSMKHP, getLaboratorium, getCustomerService
     } = useQueueStore()
     const { user } = useAuthStore()
 
-    const role = user.role
-
     useEffect(() => {
-        if (role === "superuser" || role === "operator") {
-            getSMKHP()
-        }
-        if (role === "superuser" || role === "laboratorium") {
-            getLaboratorium()
-        }
-        if (role === "superuser" || role === "customer_service") {
-            getCustomerService()
-        }
-    }, [role, getSMKHP, getLaboratorium, getCustomerService])
+        const role = user.role;
+        if (role === "superuser" || role === "operator") getSMKHP();
+        if (role === "superuser" || role === "laboratorium") getLaboratorium();
+        if (role === "superuser" || role === "customer_service") getCustomerService();
+    }, [user.role, getSMKHP, getLaboratorium, getCustomerService]);
 
-    // =====================
-    // HITUNG STATUS
-    // =====================
-    const countStatus = (data: any[]) => {
-        const active = data.filter(d => d.status?.toLowerCase() === "active")
+    const stats = useMemo(() => {
+        const process = (data: any[]) => ({
+            total: data.length,
+            menunggu: data.filter(d => d.subStatus?.toLowerCase() === "menunggu").length,
+            diproses: data.filter(d => d.subStatus?.toLowerCase() === "diproses").length
+        });
+
         return {
-            total: active.length,
-            menunggu: active.filter(
-                d => d.subStatus?.toLowerCase() === "menunggu"
-            ).length,
-            diproses: active.filter(
-                d => d.subStatus?.toLowerCase() === "diproses"
-            ).length
-        }
-    }
+            smkhp: process(smkhp),
+            lab: process(laboratorium),
+            cs: process(customer_service)
+        };
+    }, [smkhp, laboratorium, customer_service]);
 
-    const smkhpStat = countStatus(smkhp)
-    const labStat = countStatus(laboratorium)
-    const csStat = countStatus(customer_service)
-
-    // =====================
-    // RENDER BY ROLE
-    // =====================
-    const renderCards = () => {
-        if (role === "superuser") {
-            return (
-                <>
-                    <StatCard 
-                        title="SMKHP" 
-                        data={smkhpStat} 
-                        gradientFrom="from-blue-500" 
-                        gradientTo="to-blue-700"
-                    />
-                    <StatCard 
-                        title="Laboratorium" 
-                        data={labStat} 
-                        gradientFrom="from-green-500" 
-                        gradientTo="to-green-700"
-                    />
-                    <StatCard 
-                        title="Customer Service" 
-                        data={csStat} 
-                        gradientFrom="from-purple-500" 
-                        gradientTo="to-purple-700"
-                    />
-                </>
-            )
-        }
-        if (role === "operator") {
-            return (
-                <>
-                    <SingleStat 
-                        title="Total Antrian" 
-                        subtitle="SMKHP"
-                        value={smkhpStat.total} 
-                        icon={<FaUsers className="text-3xl" />}
-                        gradientFrom="from-blue-500" 
-                        gradientTo="to-blue-600"
-                    />
-                    <SingleStat 
-                        title="Menunggu" 
-                        subtitle="SMKHP"
-                        value={smkhpStat.menunggu} 
-                        icon={<FaClock className="text-3xl" />}
-                        gradientFrom="from-amber-500" 
-                        gradientTo="to-orange-600"
-                    />
-                    <SingleStat 
-                        title="Diproses" 
-                        subtitle="SMKHP"
-                        value={smkhpStat.diproses} 
-                        icon={<FaSpinner className="text-3xl" />}
-                        gradientFrom="from-emerald-500" 
-                        gradientTo="to-teal-600"
-                    />
-                </>
-            )
-        }
-        if (role === "laboratorium") {
-            return (
-                <>
-                    <SingleStat 
-                        title="Total Antrian" 
-                        subtitle="Laboratorium"
-                        value={labStat.total} 
-                        icon={<FaUsers className="text-3xl" />}
-                        gradientFrom="from-green-500" 
-                        gradientTo="to-green-600"
-                    />
-                    <SingleStat 
-                        title="Menunggu" 
-                        subtitle="Laboratorium"
-                        value={labStat.menunggu} 
-                        icon={<FaClock className="text-3xl" />}
-                        gradientFrom="from-amber-500" 
-                        gradientTo="to-orange-600"
-                    />
-                    <SingleStat 
-                        title="Diproses" 
-                        subtitle="Laboratorium"
-                        value={labStat.diproses} 
-                        icon={<FaSpinner className="text-3xl" />}
-                        gradientFrom="from-emerald-500" 
-                        gradientTo="to-teal-600"
-                    />
-                </>
-            )
-        }
-        if (role === "customer_service") {
-            return (
-                <>
-                    <SingleStat 
-                        title="Total Antrian" 
-                        subtitle="Customer Service"
-                        value={csStat.total} 
-                        icon={<FaUsers className="text-3xl" />}
-                        gradientFrom="from-purple-500" 
-                        gradientTo="to-purple-600"
-                    />
-                    <SingleStat 
-                        title="Menunggu" 
-                        subtitle="Customer Service"
-                        value={csStat.menunggu} 
-                        icon={<FaClock className="text-3xl" />}
-                        gradientFrom="from-amber-500" 
-                        gradientTo="to-orange-600"
-                    />
-                    <SingleStat 
-                        title="Diproses" 
-                        subtitle="Customer Service"
-                        value={csStat.diproses} 
-                        icon={<FaSpinner className="text-3xl" />}
-                        gradientFrom="from-emerald-500" 
-                        gradientTo="to-teal-600"
-                    />
-                </>
-            )
-        }
-        return null
-    }
+    if (isLoading) return <LoadingState />;
 
     return (
-        <div className="p-4 space-y-6 bg-gray-50">
-
-            {isLoading && (
-                <div className="flex items-center gap-2 text-gray-600">
-                    <FaSpinner className="animate-spin" />
-                    <p>Memuat data...</p>
+        <div className="p-4 space-y-6 font-mono animate-in fade-in duration-500">
+            {/* System Status Header */}
+            <div className="flex items-center justify-between border-b border-slate-300 pb-4">
+                <div>
+                    <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">System Analytics</h2>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Real-time Data Stream Active</p>
                 </div>
-            )}
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-sm">
-                    {error}
+                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-sm">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+                    <span className="text-[9px] font-black text-emerald-700 uppercase">Live Feed</span>
                 </div>
-            )}
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {renderCards()}
+            {error && <ErrorState message={error} />}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Logic Penampilan Berdasarkan Role */}
+                {(user.role === "superuser" || user.role === "operator") && (
+                    <InstrumentCard title="SMKHP Unit" data={stats.smkhp} variant="blue" />
+                )}
+                {(user.role === "superuser" || user.role === "laboratorium") && (
+                    <InstrumentCard title="Laboratory" data={stats.lab} variant="purple" />
+                )}
+                {(user.role === "superuser" || user.role === "customer_service") && (
+                    <InstrumentCard title="Service Desk" data={stats.cs} variant="emerald" />
+                )}
             </div>
         </div>
     )
 }
 
-// =====================
-// COMPONENT CARD
-// =====================
-type StatCardProps = {
-    title: string
-    data: {
-        total: number
-        menunggu: number
-        diproses: number
-    }
-    gradientFrom: string
-    gradientTo: string
-}
+/* ================= COMPONENT: INSTRUMENT CARD ================= */
+function InstrumentCard({ title, data, variant }: { title: string, data: any, variant: 'blue' | 'purple' | 'emerald' }) {
+    const theme = {
+        blue: "border-t-blue-600 text-blue-600",
+        purple: "border-t-purple-600 text-purple-600",
+        emerald: "border-t-emerald-600 text-emerald-600",
+    }[variant];
 
-function StatCard({ title, data, gradientFrom, gradientTo }: StatCardProps) {
     return (
-        <div className={`bg-linear-to-br ${gradientFrom} ${gradientTo} rounded-sm shadow-lg hover:shadow-xl transition-shadow duration-300`}>
-            <div className="p-6 text-white">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold">{title}</h2>
-                    <div className="bg-black/20 p-3 rounded-sm">
-                        <FaCheckCircle className="text-2xl" />
-                    </div>
+        <div className={`bg-white border border-slate-300 border-t-4 ${theme} p-5 shadow-sm relative overflow-hidden group`}>
+            {/* Background Decoration */}
+            <FaChartLine className="absolute -bottom-4 -right-4 text-slate-50 text-6xl opacity-50 group-hover:scale-110 transition-transform" />
+            
+            <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                    <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">{title}</h3>
+                    <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-xs">UNIT_{title.substring(0,3).toUpperCase()}</span>
                 </div>
-                
-                <div className="space-y-4">
-                    <StatRow 
-                        icon={<FaUsers className="text-xl" />} 
-                        label="Total Active" 
-                        value={data.total} 
-                    />
-                    <div className="border-t border-white border-opacity-20"></div>
-                    <StatRow 
-                        icon={<FaClock className="text-xl" />} 
-                        label="Menunggu" 
-                        value={data.menunggu} 
-                    />
-                    <div className="border-t border-white border-opacity-20"></div>
-                    <StatRow 
-                        icon={<FaSpinner className="text-xl" />} 
-                        label="Diproses" 
-                        value={data.diproses} 
-                    />
+
+                <div className="grid grid-cols-1 gap-6">
+                    {/* Main Metric */}
+                    <div className="flex items-end justify-between">
+                        <div>
+                            <p className="text-4xl font-black text-slate-800 tracking-tighter leading-none">{data.total}</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-widest">Total Active Registry</p>
+                        </div>
+                        <div className="p-3 bg-slate-50 border border-slate-200 text-slate-400">
+                            <FaUsers className="text-xl" />
+                        </div>
+                    </div>
+
+                    {/* Sub Metrics */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-slate-50 border border-slate-200 p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                                <FaClock className="text-[10px] text-amber-500" />
+                                <span className="text-[9px] font-black text-slate-500 uppercase">Waiting</span>
+                            </div>
+                            <p className="text-xl font-black text-slate-800 tracking-tighter">{data.menunggu}</p>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                                <FaSpinner className="text-[10px] text-blue-500 animate-spin" />
+                                <span className="text-[9px] font-black text-slate-500 uppercase">Process</span>
+                            </div>
+                            <p className="text-xl font-black text-slate-800 tracking-tighter">{data.diproses}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     )
 }
 
-function SingleStat({
-    title,
-    subtitle,
-    value,
-    icon,
-    gradientFrom,
-    gradientTo
-}: {
-    title: string
-    subtitle: string
-    value: number
-    icon: React.ReactNode
-    gradientFrom: string
-    gradientTo: string
-}) {
+function LoadingState() {
     return (
-        <div className={`bg-linear-to-br ${gradientFrom} ${gradientTo} rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105`}>
-            <div className="p-6 text-white">
-                <div className="flex items-start justify-between mb-4">
-                    <div>
-                        <p className="text-sm font-medium opacity-90">{subtitle}</p>
-                        <h3 className="text-lg font-bold mt-1">{title}</h3>
-                    </div>
-                    <div className="bg-black/45 p-3 rounded-sm">
-                        {icon}
-                    </div>
-                </div>
-                
-                <div className="mt-6">
-                    <p className="text-5xl font-bold tracking-tight">{value}</p>
-                    <p className="text-sm opacity-75 mt-2">antrian aktif</p>
-                </div>
-            </div>
+        <div className="w-full py-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 bg-slate-50/50 rounded-sm">
+            <FaSpinner className="text-3xl text-slate-400 animate-spin mb-4" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Synchronizing Data Modules...</p>
         </div>
     )
 }
 
-function StatRow({ icon, label, value }: { icon: React.ReactNode, label: string, value: number }) {
+function ErrorState({ message }: { message: string }) {
     return (
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <div className="bg-black/20 p-2 rounded-sm">
-                    {icon}
-                </div>
-                <span className="font-medium">{label}</span>
+        <div className="p-4 bg-red-50 border border-red-200 flex items-center gap-4">
+            <FaExclamationTriangle className="text-red-500" />
+            <div>
+                <p className="text-[10px] font-black text-red-700 uppercase">System Error Detected</p>
+                <p className="text-xs text-red-600">{message}</p>
             </div>
-            <span className="text-2xl font-bold">{value}</span>
         </div>
     )
 }

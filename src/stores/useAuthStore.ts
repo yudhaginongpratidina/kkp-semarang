@@ -10,6 +10,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { toast } from 'sonner';
 
 // configs
 import { auth, db } from "../configs/firebase";
@@ -68,45 +69,29 @@ const useAuthStore = create<AuthState & AuthAction>()(
             is_error: false,
             message: '',
 
-            // Set field dinamis
             setField: (key, value) => set({ [key]: value } as Partial<AuthState>),
 
-            // Reset seluruh state
             reset: () => set({ ...initialState, is_loading: false, is_error: false, message: '' }),
 
-            // Logout
             logout: async () => {
+                const toastId = toast.loading("Logging out from terminal...");
                 try {
                     await signOut(auth);
-                    set({
-                        user: { id: '', email: '', full_name: '', role: '', nip: '' },
-                        full_name: '',
-                        email: '',
-                        nip: '',
-                        password: '',
-                        current_password: '',
-                        role: 'operator',
-                        is_loading: false,
-                        is_error: false,
-                        message: 'Logout successfully'
-                    });
-                    // Redirect ke halaman login
-                    setTimeout(() => window.location.href = '/login', 2000);
+                    set({ ...initialState });
+                    toast.success("Terminal session ended", { id: toastId });
+                    setTimeout(() => window.location.href = '/login', 1000);
                 } catch (error) {
-                    console.error("Logout error:", error);
-                    set({ is_error: true, message: 'Logout failed' });
-                    setTimeout(() => set({ is_error: false, message: '' }), 3000);
+                    toast.error("Logout failed", { id: toastId });
                 }
             },
 
-            // Register
             register: async (e?: React.FormEvent) => {
                 e?.preventDefault();
                 const { full_name, email, nip, password, role } = get();
-                set({ is_loading: true, is_error: false, message: '' });
+                const toastId = toast.loading("Initializing new officer credentials...");
+                set({ is_loading: true, is_error: false });
 
                 try {
-                    const user_role = role || 'operator';
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const uid = userCredential.user.uid;
 
@@ -114,30 +99,26 @@ const useAuthStore = create<AuthState & AuthAction>()(
                         full_name,
                         email,
                         nip,
-                        role: user_role,
+                        role: role || 'operator',
                         createdAt: new Date()
                     });
 
-                    set({ is_error: false, message: 'Account created successfully' });
-                    setTimeout(() => window.location.href = '/', 2000);
-                } catch (error) {
-                    console.error("Register error:", error);
-                    if (error instanceof Error) {
-                        const firebaseCode = (error as any).code || '';
-                        const message = firebaseCode === 'auth/email-already-in-use' ? 'EMAIL_EXISTS' : error.message;
-                        set({ is_error: true, message });
-                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
-                    }
+                    toast.success("Account successfully deployed", { id: toastId });
+                    setTimeout(() => window.location.href = '/', 1500);
+                } catch (error: any) {
+                    let errMsg = error.code === 'auth/email-already-in-use' ? 'EMAIL_ALREADY_EXISTS' : error.message;
+                    set({ is_error: true, message: errMsg });
+                    toast.error(errMsg, { id: toastId });
                 } finally {
                     set({ is_loading: false });
                 }
             },
 
-            // Login
             login: async (e?: React.FormEvent) => {
                 e?.preventDefault();
                 const { email, password } = get();
-                set({ is_loading: true, is_error: false, message: '' });
+                const toastId = toast.loading("Verifying access keys...");
+                set({ is_loading: true, is_error: false });
 
                 try {
                     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -151,123 +132,79 @@ const useAuthStore = create<AuthState & AuthAction>()(
                             role: data.role,
                             nip: data.nip
                         });
+                        toast.success(`Access Granted: Welcome ${data.full_name}`, { id: toastId });
+                        setTimeout(() => window.location.href = '/dashboard', 1500);
+                    } else {
+                        throw new Error("USER_NOT_FOUND_IN_DATABASE");
                     }
+                } catch (error: any) {
+                    let errMsg = "AUTH_ERROR";
+                    if (error.code === 'auth/user-not-found') errMsg = "USER_NOT_FOUND";
+                    else if (error.code === 'auth/wrong-password') errMsg = "INVALID_CREDENTIALS";
+                    else errMsg = error.message;
 
-                    set({ is_error: false, message: 'Login successfully', password: '' });
-                    setTimeout(() => window.location.href = '/dashboard', 2000);
-                } catch (error) {
-                    console.error("Login error:", error);
-                    if (error instanceof Error) {
-                        const firebaseCode = (error as any).code || '';
-                        let message = '';
-                        switch (firebaseCode) {
-                            case 'auth/user-not-found':
-                                message = 'USER_NOT_FOUND';
-                                break;
-                            case 'auth/wrong-password':
-                                message = 'INVALID_PASSWORD';
-                                break;
-                            default:
-                                message = error.message;
-                        }
-                        set({ is_error: true, message });
-                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
-                    }
+                    set({ is_error: true, message: errMsg });
+                    toast.error(errMsg, { id: toastId });
                 } finally {
                     set({ is_loading: false });
                 }
             },
 
-            // Get account
             get_account: async () => {
                 const { user, setField } = get();
                 try {
-                    if (!user.id) throw new Error("User not logged in");
-
+                    if (!user.id) return; // Silent return if no user
                     const userDoc = await getDoc(doc(db, "officers", user.id));
                     if (userDoc.exists()) {
                         const data = userDoc.data();
                         setField("full_name", data.full_name || '');
                         setField("role", data.role || 'operator');
                         setField("nip", data.nip || '');
-                    } else {
-                        throw new Error("User data not found in Firestore");
                     }
-                } catch (error) {
-                    console.error("Get account error:", error);
-                    if (error instanceof Error) {
-                        set({ is_error: true, message: error.message });
-                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
-                    }
+                } catch (error: any) {
+                    toast.error("DATA_FETCH_FAILED: " + error.message);
                 }
             },
 
-            // Update account (full_name)
             update_account: async (e?: React.FormEvent) => {
                 e?.preventDefault();
-                const { user, full_name, setField } = get();
+                const { user, full_name } = get();
+                const toastId = toast.loading("Syncing profile data...");
 
                 try {
-                    if (!user.id) throw new Error("User not logged in");
-
-                    const docRef = doc(db, "officers", user.id);
-                    await updateDoc(docRef, {
+                    if (!user.id) throw new Error("UNAUTHORIZED");
+                    await updateDoc(doc(db, "officers", user.id), {
                         full_name,
                         updatedAt: new Date()
                     });
-
-                    setField("full_name", full_name);
-                    set({ is_error: false, message: "Account updated successfully" });
-                    setTimeout(() => set({ is_error: false, message: '' }), 3000);
-                } catch (error) {
-                    console.error("Update account error:", error);
-                    if (error instanceof Error) {
-                        set({ is_error: true, message: error.message });
-                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
-                    }
+                    set({ full_name });
+                    toast.success("Profile sync complete", { id: toastId });
+                } catch (error: any) {
+                    toast.error("UPDATE_FAILED: " + error.message, { id: toastId });
                 }
             },
 
-            // Update password
             update_password: async (e?: React.FormEvent) => {
                 e?.preventDefault();
                 const { user, current_password, password } = get();
-                set({ is_loading: true, is_error: false, message: '' });
+                const toastId = toast.loading("Re-encrypting access keys...");
+                set({ is_loading: true });
 
                 try {
-                    if (!auth.currentUser) throw new Error("User not logged in");
-
+                    if (!auth.currentUser) throw new Error("SESSION_EXPIRED");
                     const credential = EmailAuthProvider.credential(user.email, current_password);
                     await reauthenticateWithCredential(auth.currentUser, credential);
-
                     await updatePassword(auth.currentUser, password);
 
-                    set({ is_error: false, message: "Password updated successfully", password: '', current_password: '' });
-                    setTimeout(() => set({ is_error: false, message: '' }), 3000);
-                    console.log("Password updated successfully");
-                } catch (error) {
-                    console.error("Update password error:", error);
-                    if (error instanceof Error) {
-                        const firebaseCode = (error as any).code || '';
-                        let message = '';
-                        switch (firebaseCode) {
-                            case 'auth/wrong-password':
-                                message = 'CURRENT_PASSWORD_INVALID';
-                                break;
-                            case 'auth/weak-password':
-                                message = 'PASSWORD_TOO_WEAK';
-                                break;
-                            default:
-                                message = error.message;
-                        }
-                        set({ is_error: true, message });
-                        setTimeout(() => set({ is_error: false, message: '' }), 3000);
-                    }
+                    set({ password: '', current_password: '' });
+                    toast.success("Encryption keys updated", { id: toastId });
+                } catch (error: any) {
+                    let errMsg = error.code === 'auth/wrong-password' ? "CURRENT_PASSWORD_INVALID" : error.message;
+                    toast.error(errMsg, { id: toastId });
                 } finally {
                     set({ is_loading: false });
                 }
             }
-
         }),
         {
             name: 'auth-storage',

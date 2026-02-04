@@ -21,13 +21,13 @@ type NoAjuAction = {
 };
 
 export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
-    noAjuItems: [{ noAju: "", expiredAju: "" }],
+    noAjuItems: [],
     loading: false,
     error: null,
 
     setNoAjuItems: (items) => set({ noAjuItems: items }),
 
-    resetStore: () => set({ noAjuItems: [{ noAju: "", expiredAju: "" }], error: null }),
+    resetStore: () => set({ noAjuItems: [], error: null, loading: false }),
 
     get_no_aju_by_uid: async (uid: string) => {
         set({ loading: true, error: null });
@@ -38,12 +38,12 @@ export const useNoAjuStore = create<NoAjuState & NoAjuAction>((set) => ({
 
             if (!querySnapshot.empty) {
                 const userData = querySnapshot.docs[0].data();
-                // Cek apakah noAjuList ada dan bukan array kosong
-                if (userData.noAjuList && Array.isArray(userData.noAjuList) && userData.noAjuList.length > 0) {
-                    set({ noAjuItems: userData.noAjuList });
-                } else {
-                    set({ noAjuItems: [{ noAju: "", expiredAju: "" }] });
-                }
+                const list = userData.noAjuList || [];
+                set({
+                    noAjuItems: list.length > 0 ? list : [{ noAju: "", expiredAju: "" }]
+                });
+            } else {
+                set({ noAjuItems: [{ noAju: "", expiredAju: "" }] });
             }
         } catch (err: any) {
             set({ error: err.message });
