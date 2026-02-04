@@ -59,7 +59,7 @@ export default function KPPSidebar() {
                         <div className="w-5 h-5 flex justify-center items-center transition-transform group-hover:-translate-x-1">
                             <IoLogOut className="w-5 h-5" />
                         </div>
-                        <span className="hidden md:block capitalize text-[11px] font-bold tracking-wider uppercase">End Session</span>
+                        <span className="hidden md:block capitalize text-[11px] font-bold tracking-wider">End Session</span>
                     </button>
                 </div>
             </nav>

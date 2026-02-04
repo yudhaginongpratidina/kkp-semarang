@@ -51,7 +51,7 @@ const Item = ({ href, icon, title }: ItemProps) => {
             
             {/* Active Indicator: Top Notch */}
             {isActive && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-slate-800/30" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-slate-800/30" />
             )}
         </Link>
     )

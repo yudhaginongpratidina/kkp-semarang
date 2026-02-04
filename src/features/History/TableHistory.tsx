@@ -97,7 +97,7 @@ export default function TableHistory() {
                                         <td className="p-4 text-center">
                                             <Link
                                                 to={`/history/${user.uid}`}
-                                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-900 text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-900 text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
                                             >
                                                 <FaEye /> View_Logs
                                             </Link>
