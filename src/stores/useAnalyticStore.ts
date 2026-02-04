@@ -41,7 +41,6 @@ const useAnalyticStore = create<AnalyticState & AnalyticAction>((set) => ({
     subscribeAnalytics: (targetYear = new Date().getFullYear()) => {
         set({ isLoading: true, error: null })
         
-        // Flag untuk menandai apakah ini push data pertama kali
         let isInitialLoad = true;
 
         const unsub = onSnapshot(
@@ -60,7 +59,7 @@ const useAnalyticStore = create<AnalyticState & AnalyticAction>((set) => ({
                     const d = doc.data() as Data
                     const [service, dateStr] = doc.id.split("_")
                     
-                    if (!dateStr || dateStr.length < 8) return; // Guard clause jika format ID salah
+                    if (!dateStr || dateStr.length < 8) return;
 
                     const y = parseInt(dateStr.slice(0, 4))
                     const m = parseInt(dateStr.slice(4, 6)) - 1
