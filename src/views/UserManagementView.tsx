@@ -1,8 +1,8 @@
 // features
 import { KPPSidebar, KPPHeader, KPPMain, KPPModal } from "../features/Layout"
-import { RoleTable } from "../features/RoleManagement"
+import { UserTable } from "../features/UserManagement"
 
-export default function RoleManagementView() {
+export default function UserManagementView() {
     return (
         <>
             <KPPModal />
@@ -10,7 +10,7 @@ export default function RoleManagementView() {
                 <KPPSidebar />
                 <KPPMain>
                     <KPPHeader />
-                    <RoleTable />
+                    <UserTable />
                 </KPPMain>
             </div>
         </>

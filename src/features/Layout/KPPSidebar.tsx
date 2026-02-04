@@ -32,9 +32,9 @@ export default function KPPSidebar() {
                 />
                 {user.role === "superuser" && (
                     <Item
-                        href="/role-management"
+                        href="/user-management"
                         icon={<FaUserCog className="w-5 h-5" />}
-                        title="role management"
+                        title="user management"
                     />
                 )}
                 {(user.role === "customer_service" || user.role === "superuser") && (

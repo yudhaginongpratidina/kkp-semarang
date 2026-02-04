@@ -1,5 +1,5 @@
 export { default as useAuthStore } from './useAuthStore'
-export { default as useUserRoleManagementStore } from './useUserRoleManagementStore'
+export { default as useUserManagementStore } from './useUserManagementStore'
 export { default as useHistoryStore } from './useHistoryStore'
 export { default as useQueueStore } from './useQueueStore'
 export { default as useModalStore } from './useModalStore'
