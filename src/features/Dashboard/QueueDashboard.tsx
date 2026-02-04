@@ -186,7 +186,10 @@ const TriggerButton = ({ id, title, icon, count, onClick, activeTab, variant }: 
     );
 };
 
+import { useQueueCaller } from "../../stores"
+
 const ItemQueue = ({ token, queue, name, phone, service_type, status }: any) => {
+    const { callQueue } = useQueueCaller();
     const { open } = useModalStore();
     const { updateSMKHPStatus, updateLaboratoriumStatus, updateCustomerServiceStatus, getLaboratorium, getSMKHP, getCustomerService } = useQueueStore();
 
@@ -199,6 +202,8 @@ const ItemQueue = ({ token, queue, name, phone, service_type, status }: any) => 
     const current = config[service_type.toLowerCase()] || { icon: null, color: "bg-slate-600", prefix: "Z" };
 
     const handleAction = async () => {
+        callQueue(name, queue, service_type);
+
         if (status.toLowerCase() === 'menunggu') {
             if (service_type === 'Laboratorium') await updateLaboratoriumStatus(token, "Diproses");
             if (service_type === 'SMKHP') await updateSMKHPStatus(token, "Diproses");
