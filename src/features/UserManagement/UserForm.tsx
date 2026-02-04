@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import z from "zod";
 import * as XLSX from "xlsx";
 import { MdPerson, MdBadge, MdWork, MdFileUpload } from "react-icons/md";
-import { FormControl, TextField, SelectField, Button } from "../../components";
+import { FiAlertTriangle, FiFileText } from "react-icons/fi";
+import { FormControl, TextField, SelectField } from "../../components";
 import { useUserManagementStore } from "../../stores";
 
 const ROLE_OPTIONS = ["operator", "customer_service", "laboratorium", "superuser"];
@@ -33,131 +34,136 @@ export default function UserForm({ type, id }: { type: "create" | "update", id?:
     const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         try {
             const data = await file.arrayBuffer();
             const workbook = XLSX.read(data);
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
-
-            // Konversi ke JSON
             const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-            if (json.length === 0) {
-                throw new Error("File Excel kosong atau tidak terbaca");
-            }
-
+            if (json.length === 0) throw new Error("EMPTY_DATASET_ERROR");
             await import_users_excel(json);
-
-            alert(`Berhasil mengimport ${json.length} data petugas.`);
+            alert(`SUCCESS: ${json.length} ENTRIES_IMPORTED`);
             e.target.value = "";
             setActiveTab("manual");
         } catch (err: any) {
-            console.error(err);
-            alert(err.message || "Gagal mengimport data. Pastikan format header benar.");
+            alert(err.message || "IMPORT_FAILED");
         }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!full_name || !nip || !role) {
-            alert("Semua field wajib diisi!");
-            return;
-        }
-
-        if (type === "create") {
-            await create_officer();
-        } else if (type === "update" && id) {
-            await update_officer(id);
-        }
+        if (!full_name || !nip || !role) return alert("REQUIRED_FIELDS_MISSING");
+        type === "create" ? await create_officer() : await update_officer(id!);
     };
 
     return (
-        <div className="space-y-6">
-            {/* Tab Navigation */}
-            <div className="flex gap-4 border-b border-gray-200">
+        <div className="font-mono text-slate-800 p-2">
+            {/* Header Status */}
+            <div className="flex items-center gap-2 mb-6">
+                <div className="w-3 h-3 bg-blue-600"></div>
+                <h2 className="text-xs font-black uppercase tracking-tighter italic">
+                    {type === "update" ? `patch_process // id:${id?.slice(0, 8)}` : "new_entry_initialization"}
+                </h2>
+            </div>
+
+            {/* Tab System - Industrial Style */}
+            <div className="flex mb-6 border-b-2 border-slate-200">
                 <button
                     type="button"
                     onClick={() => setActiveTab("manual")}
-                    className={`pb-2 px-2 text-sm font-bold transition-all ${activeTab === "manual" ? "border-b-2 border-indigo-600 text-indigo-600" : "text-gray-400"}`}
+                    className={`px-6 py-2 text-[10px] font-black uppercase transition-all border-t-2 border-x-2 ${
+                        activeTab === "manual" 
+                        ? "border-slate-800 bg-slate-800 text-white -mb-0.5" 
+                        : "border-transparent text-slate-400 hover:text-slate-600"
+                    }`}
                 >
-                    {type === "update" ? "Edit Data Petugas" : "Input Manual"}
+                    {type === "update" ? "Modify_Data" : "Manual_Input"}
                 </button>
                 {type === "create" && (
                     <button
                         type="button"
                         onClick={() => setActiveTab("import")}
-                        className={`pb-2 px-2 text-sm font-bold transition-all ${activeTab === "import" ? "border-b-2 border-indigo-600 text-indigo-600" : "text-gray-400"}`}
+                        className={`px-6 py-2 text-[10px] font-black uppercase transition-all border-t-2 border-x-2 ${
+                            activeTab === "import" 
+                            ? "border-slate-800 bg-slate-800 text-white -mb-0.5" 
+                            : "border-transparent text-slate-400 hover:text-slate-600"
+                        }`}
                     >
-                        Import via Excel
+                        Bulk_Import_XLSX
                     </button>
                 )}
             </div>
 
             {activeTab === "manual" ? (
-                <FormControl onSubmit={handleSubmit}>
-                    <TextField
-                        type="text"
-                        required
-                        id="full_name"
-                        label="Nama Lengkap"
-                        icon={<MdPerson className="w-4 h-4" />}
-                        loading={is_loading}
-                        schema={z.string().min(3, "Nama terlalu pendek")}
-                        controller={{
-                            value: full_name,
-                            onChange: (e) => setField('full_name', e.target.value)
-                        }}
-                    />
-                    <TextField
-                        type="text"
-                        required
-                        id="nip"
-                        label="NIP"
-                        icon={<MdBadge className="w-4 h-4" />}
-                        loading={is_loading}
-                        schema={z.string().min(5, "NIP minimal 5 karakter")}
-                        controller={{
-                            value: nip,
-                            onChange: (e) => setField('nip', e.target.value)
-                        }}
-                    />
-                    <SelectField
-                        id="role"
-                        label="Jabatan"
-                        required={true}
-                        icon={<MdWork className="w-4 h-4" />}
-                        loading={is_loading}
-                        schema={z.string().min(1, "Harap pilih jabatan")}
-                        options={ROLE_OPTIONS.map(opt => ({
-                            value: opt,
-                            label: opt.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                        }))}
-                        controller={{
-                            value: role,
-                            onChange: (e) => setField('role', e.target.value)
-                        }}
-                    />
-                    <div className="mt-4">
-                        <Button
-                            type="submit"
-                            is_loading={is_loading}
-                            className={`w-full text-white font-semibold py-2.5 rounded-lg transition-all ${type === 'update'
-                                ? 'bg-orange-500 hover:bg-orange-600 shadow-md'
-                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-md'
+                <div className="bg-slate-50 border-2 border-slate-800 p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                    <FormControl onSubmit={handleSubmit}>
+                        <div className="grid gap-4">
+                            <TextField
+                                type="text"
+                                required
+                                id="full_name"
+                                label="OFFICER_NAME"
+                                icon={<MdPerson className="text-blue-600" />}
+                                loading={is_loading}
+                                schema={z.string().min(3)}
+                                controller={{
+                                    value: full_name,
+                                    onChange: (e) => setField('full_name', e.target.value)
+                                }}
+                            />
+                            <TextField
+                                type="text"
+                                required
+                                id="nip"
+                                label="REGISTRATION_ID (NIP)"
+                                icon={<MdBadge className="text-blue-600" />}
+                                loading={is_loading}
+                                schema={z.string().min(5)}
+                                controller={{
+                                    value: nip,
+                                    onChange: (e) => setField('nip', e.target.value)
+                                }}
+                            />
+                            <SelectField
+                                id="role"
+                                label="ACCESS_LEVEL"
+                                required={true}
+                                icon={<MdWork className="text-blue-600" />}
+                                loading={is_loading}
+                                schema={z.string()}
+                                options={ROLE_OPTIONS.map(opt => ({
+                                    value: opt,
+                                    label: opt.toUpperCase().replace('_', ' ')
+                                }))}
+                                controller={{
+                                    value: role,
+                                    onChange: (e) => setField('role', e.target.value)
+                                }}
+                            />
+                        </div>
+
+                        <div className="mt-8">
+                            <button
+                                type="submit"
+                                disabled={is_loading}
+                                className={`w-full text-[11px] font-black uppercase py-4 border-2 border-slate-900 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 ${
+                                    type === 'update' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'
                                 }`}
-                        >
-                            {type === "update" ? "Perbarui Data Petugas" : "Daftarkan Petugas Baru"}
-                        </Button>
-                    </div>
-                </FormControl>
+                            >
+                                {is_loading ? "EXECUTING..." : type === "update" ? "EXECUTE_PATCH" : "COMMIT_ENTRY"}
+                            </button>
+                        </div>
+                    </FormControl>
+                </div>
             ) : (
-                <div className="p-10 border-2 border-dashed border-gray-200 rounded-xl text-center bg-gray-50/50">
-                    <div className="bg-indigo-100 w-16 h-16 rounded-full flex justify-center items-center mx-auto mb-4">
-                        <MdFileUpload className="w-8 h-8 text-indigo-600" />
+                /* Import Tab */
+                <div className="bg-slate-100 border-2 border-dashed border-slate-400 p-10 text-center relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-2 opacity-20">
+                        <FiFileText size={80} />
                     </div>
-                    <h3 className="text-base font-bold text-gray-800">Massal Upload Petugas</h3>
-                    <p className="text-sm text-gray-500 mb-6">Seret file Excel ke sini atau klik tombol di bawah</p>
+                    
+                    <MdFileUpload className="w-12 h-12 text-slate-400 mx-auto mb-4 group-hover:text-blue-600 transition-colors" />
+                    <h3 className="text-xs font-black uppercase mb-1">Upload_Data_Stream</h3>
+                    <p className="text-[10px] text-slate-500 mb-6 uppercase tracking-widest italic">Format: .XLSX / .XLS Only</p>
 
                     <input
                         id="excel-upload"
@@ -169,21 +175,26 @@ export default function UserForm({ type, id }: { type: "create" | "update", id?:
                     />
                     <label
                         htmlFor="excel-upload"
-                        className="cursor-pointer bg-white border border-gray-300 px-6 py-2.5 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm inline-block"
+                        className="cursor-pointer bg-white border-2 border-slate-900 px-8 py-3 text-[10px] font-black uppercase hover:bg-slate-900 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] inline-block"
                     >
-                        Pilih File Excel
+                        Initialize_Upload
                     </label>
 
-                    <div className="mt-8 text-left p-4 bg-amber-50 rounded-lg border border-amber-100">
-                        <p className="text-xs font-bold text-amber-800 uppercase mb-2">Panduan Header Excel:</p>
-                        <div className="flex gap-2 flex-wrap">
+                    <div className="mt-10 text-left bg-white border border-slate-200 p-4 relative">
+                        <div className="absolute -top-3 left-4 bg-white px-2 text-[9px] font-black flex items-center gap-1">
+                            <FiAlertTriangle className="text-orange-500" /> DATA_SCHEMA_PROTOCOL
+                        </div>
+                        <div className="flex gap-2 flex-wrap mt-2">
                             {['full_name', 'nip', 'role'].map(header => (
-                                <code key={header} className="text-[11px] bg-white px-2 py-1 rounded border border-amber-200 text-amber-700 font-mono font-bold">
-                                    {header}
-                                </code>
+                                <span key={header} className="text-[10px] bg-slate-100 px-2 py-1 border border-slate-300 font-bold">
+                                    {header.toUpperCase()}
+                                </span>
                             ))}
                         </div>
-                        <p className="text-[10px] text-amber-600 mt-3 italic">*Pastikan role diisi dengan: {ROLE_OPTIONS.join(', ')}</p>
+                        <p className="text-[12px] font-bold  mt-4 leading-relaxed uppercase">
+                            Warning: Valid role values are restricted to {ROLE_OPTIONS.join(' | ').toUpperCase()}. 
+                            Invalid entries will be rejected by system validation.
+                        </p>
                     </div>
                 </div>
             )}

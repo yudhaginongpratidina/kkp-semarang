@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaEye, FaSearch, FaUserCircle, FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaEye, FaSearch, FaUserCircle, FaChevronLeft, FaChevronRight, FaDatabase } from "react-icons/fa";
 import { useHistoryStore } from "../../stores";
 
 export default function TableHistory() {
@@ -13,7 +13,6 @@ export default function TableHistory() {
         getAllUsers();
     }, [getAllUsers]);
 
-    // Filter berdasarkan Nama atau Nomor HP
     const filteredUsers = useMemo(() => {
         return users.filter(u =>
             u.nama?.toLowerCase().includes(search.toLowerCase()) ||
@@ -22,175 +21,164 @@ export default function TableHistory() {
         );
     }, [users, search]);
 
-    // Pagination logic
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentUsers = filteredUsers.slice(startIndex, endIndex);
+    const currentUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
-    // Reset ke halaman 1 saat search berubah
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [search]);
+    useEffect(() => { setCurrentPage(1); }, [search]);
 
-    const handlePageChange = (page: any) => {
+    const handlePageChange = (page: number) => {
         setCurrentPage(page);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Generate page numbers untuk ditampilkan
-    const getPageNumbers = () => {
-        const pages = [];
-        const maxVisible = 5;
-
-        if (totalPages <= maxVisible) {
-            for (let i = 1; i <= totalPages; i++) {
-                pages.push(i);
-            }
-        } else {
-            if (currentPage <= 3) {
-                for (let i = 1; i <= 4; i++) pages.push(i);
-                pages.push('...');
-                pages.push(totalPages);
-            } else if (currentPage >= totalPages - 2) {
-                pages.push(1);
-                pages.push('...');
-                for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-            } else {
-                pages.push(1);
-                pages.push('...');
-                pages.push(currentPage - 1);
-                pages.push(currentPage);
-                pages.push(currentPage + 1);
-                pages.push('...');
-                pages.push(totalPages);
-            }
-        }
-        return pages;
-    };
-
     return (
-        <div className="p-4 mx-auto bg-slate-50">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                <p className="text-slate-500 text-sm">Total {filteredUsers.length} pengguna terdaftar</p>
-                <div className="relative w-full md:w-80">
-                    <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="w-full p-6 space-y-6 font-mono animate-in fade-in duration-500">
+            
+            {/* 1. FILTER COMMAND BAR */}
+            <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b-2 border-slate-900 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-slate-900 text-emerald-400">
+                        <FaDatabase className="text-xl" />
+                    </div>
+                    <div>
+                        <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Master_Database</h2>
+                        <h1 className="text-xl font-black text-slate-900 uppercase">User_Registry_Archive</h1>
+                    </div>
+                </div>
+
+                <div className="relative w-full md:w-96 group">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <FaSearch className="text-slate-400 group-focus-within:text-slate-900 transition-colors" />
+                    </div>
                     <input
                         type="text"
-                        placeholder="Cari nama, NPWP, atau HP..."
-                        className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white shadow-sm transition-all"
+                        placeholder="SEARCH_BY_NAME_NPWP_OR_PHONE..."
+                        className="w-full pl-10 pr-4 py-3 bg-slate-100 border-b-2 border-slate-300 focus:border-slate-900 outline-none text-[11px] font-bold uppercase tracking-wider transition-all"
                         onChange={(e) => setSearch(e.target.value)}
                         value={search}
                     />
                 </div>
             </div>
 
-            <div className="bg-white rounded-sm shadow-sm border border-slate-200 overflow-hidden">
+            {/* 2. DATA GRID CONTAINER */}
+            <div className="bg-white border-2 border-slate-900 shadow-[8px_8px_0px_0px_rgba(15,23,42,0.1)] overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                            <tr>
-                                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">Pengguna</th>
-                                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider">NPWP</th>
-                                <th className="p-4 font-semibold text-slate-600 text-sm uppercase tracking-wider text-center">Aksi</th>
+                        <thead>
+                            <tr className="bg-slate-900 text-white">
+                                <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em]">User_Profile</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em]">Identification_No</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-[0.2em] text-center">System_Action</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="divide-y divide-slate-200">
                             {loadingUser ? (
-                                <tr>
-                                    <td colSpan={3} className="p-20 text-center">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                                            <span className="text-slate-400 font-medium">Memuat data pengguna...</span>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <LoadingState />
                             ) : currentUsers.length > 0 ? (
                                 currentUsers.map(user => (
                                     <tr key={user.uid} className="hover:bg-slate-50 transition-colors group">
                                         <td className="p-4">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
-                                                    <FaUserCircle className="text-2xl" />
+                                                <div className="w-10 h-10 bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:border-slate-900 group-hover:bg-white transition-all">
+                                                    <FaUserCircle className="text-xl group-hover:text-slate-900" />
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-slate-800">{user.nama}</div>
-                                                    <div className="text-xs text-slate-500 font-medium">{user.nomorHp}</div>
+                                                    <div className="text-sm font-black text-slate-900 uppercase leading-none mb-1">{user.nama}</div>
+                                                    <div className="text-[10px] text-slate-500 font-bold tracking-tighter italic">{user.nomorHp}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <span className="text-slate-600 font-mono text-sm bg-slate-100 px-2 py-1 rounded-sm">
-                                                {user.npwp || "Tidak ada NPWP"}
-                                            </span>
+                                            <div className="inline-block px-2 py-1 bg-slate-100 border border-slate-200 text-[10px] font-black text-slate-600">
+                                                {user.npwp || "NO_IDENTIFICATION_FOUND"}
+                                            </div>
                                         </td>
                                         <td className="p-4 text-center">
                                             <Link
                                                 to={`/history/${user.uid}`}
-                                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-semibold rounded-sm hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm text-sm"
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-900 text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(15,23,42,1)] active:shadow-none active:translate-x-[2px] active:translate-y-[2px]"
                                             >
-                                                <FaEye /> Detail Riwayat
+                                                <FaEye /> View_Logs
                                             </Link>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
-                                <tr>
-                                    <td colSpan={3} className="p-20 text-center text-slate-400 italic">
-                                        {search ? `Tidak ada pengguna ditemukan dengan kata kunci "${search}"` : "Tidak ada data pengguna"}
-                                    </td>
-                                </tr>
+                                <EmptyState search={search} />
                             )}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Pagination */}
+                {/* 3. TACTICAL PAGINATION */}
                 {!loadingUser && filteredUsers.length > 0 && (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-200 bg-slate-50">
-                        <div className="text-sm text-slate-600">
-                            Menampilkan <span className="font-semibold">{startIndex + 1}</span> - <span className="font-semibold">{Math.min(endIndex, filteredUsers.length)}</span> dari <span className="font-semibold">{filteredUsers.length}</span> pengguna
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t-2 border-slate-900 bg-slate-50">
+                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                            Showing <span className="text-slate-900">{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)}</span> / Total_{filteredUsers.length}_Nodes
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => handlePageChange(currentPage - 1)}
+                        <div className="flex items-center gap-1">
+                            <PaginationButton 
+                                onClick={() => handlePageChange(currentPage - 1)} 
                                 disabled={currentPage === 1}
-                                className="p-2 rounded-sm border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <FaChevronLeft />
-                            </button>
-
-                            <div className="flex items-center gap-1">
-                                {getPageNumbers().map((page, index) => (
-                                    page === '...' ? (
-                                        <span key={`ellipsis-${index}`} className="px-3 py-2 text-slate-400">...</span>
-                                    ) : (
-                                        <button
-                                            key={page}
-                                            onClick={() => handlePageChange(page)}
-                                            className={`px-3 py-2 rounded-sm text-sm font-medium transition-colors ${currentPage === page
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
-                                                }`}
-                                        >
-                                            {page}
-                                        </button>
-                                    )
-                                ))}
+                                icon={<FaChevronLeft />}
+                            />
+                            
+                            <div className="px-4 py-1.5 bg-slate-900 text-white text-[10px] font-black">
+                                PAGE_{currentPage}_OF_{totalPages}
                             </div>
 
-                            <button
-                                onClick={() => handlePageChange(currentPage + 1)}
+                            <PaginationButton 
+                                onClick={() => handlePageChange(currentPage + 1)} 
                                 disabled={currentPage === totalPages}
-                                className="p-2 rounded-sm border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <FaChevronRight />
-                            </button>
+                                icon={<FaChevronRight />}
+                            />
                         </div>
                     </div>
                 )}
             </div>
         </div>
+    );
+}
+
+/* ================= HELPER COMPONENTS ================= */
+
+function LoadingState() {
+    return (
+        <tr>
+            <td colSpan={3} className="p-20 text-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-1 border-2 border-slate-200 relative overflow-hidden bg-slate-100">
+                        <div className="absolute inset-y-0 left-0 bg-slate-900 w-1/2 animate-[loading_1s_infinite_linear]"></div>
+                    </div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Syncing_Database...</span>
+                </div>
+            </td>
+        </tr>
+    );
+}
+
+function EmptyState({ search }: { search: string }) {
+    return (
+        <tr>
+            <td colSpan={3} className="p-20 text-center">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    {search ? `Null_Result_For: "${search}"` : "No_Data_Packets_Found"}
+                </div>
+            </td>
+        </tr>
+    );
+}
+
+function PaginationButton({ onClick, disabled, icon }: any) {
+    return (
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            className="p-2.5 bg-white border border-slate-900 text-slate-900 hover:bg-slate-100 disabled:opacity-30 disabled:grayscale transition-all active:bg-slate-200"
+        >
+            {icon}
+        </button>
     );
 }

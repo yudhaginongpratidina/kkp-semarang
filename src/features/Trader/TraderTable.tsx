@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { FiSearch, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight} from "react-icons/fi";
+import { useState, useEffect, useMemo } from "react";
+import { FiSearch, FiEdit2, FiTrash2, FiChevronLeft, FiChevronRight, FiPlus, FiDatabase } from "react-icons/fi";
 import TraderForm from "./TraderForm";
 import { useTraderStore, useModalStore } from "../../stores";
 import { type Trader } from "../../stores/useTraderStore";
@@ -8,21 +8,16 @@ export default function TraderTable() {
     const { traders, getTraders, deleteTrader, isLoading } = useTraderStore();
     const { open } = useModalStore();
 
-    // State untuk Filter
     const [searchTerm, setSearchTerm] = useState("");
     const [filterType, setFilterType] = useState<keyof Pick<Trader, "nama_trader" | "kode_trader" | "npwp">>("nama_trader");
-
-    // State untuk Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
 
-    // 1. Inisialisasi Data Realtime
     useEffect(() => {
         const unsubscribe = getTraders();
         return () => unsubscribe();
     }, [getTraders]);
 
-    // 2. Logika Filter (useMemo untuk performa)
     const filteredData = useMemo(() => {
         return traders.filter((item) => {
             const value = item[filterType]?.toLowerCase() || "";
@@ -30,7 +25,6 @@ export default function TraderTable() {
         });
     }, [traders, searchTerm, filterType]);
 
-    // 3. Logika Pagination
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const currentItems = useMemo(() => {
         const lastIndex = currentPage * itemsPerPage;
@@ -38,141 +32,122 @@ export default function TraderTable() {
         return filteredData.slice(firstIndex, lastIndex);
     }, [filteredData, currentPage, itemsPerPage]);
 
-    // 4. Handlers
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
-        setCurrentPage(1);
-    };
-
-    const handleDelete = async (id: string) => {
-        if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-            await deleteTrader(id);
-        }
-    };
-
     return (
-        <div className="w-full p-4">
-            <div className=" bg-white p-6 rounded-sm shadow-sm border border-gray-200">
-                {/* Filter Section */}
-                <div className="flex flex-col md:flex-row gap-3 mb-6">
-                    <div className="relative flex-1">
-                        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder={`Cari ${filterType.replace("_", " ")}...`}
-                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-sm outline-none transition-all"
-                            value={searchTerm}
-                            onChange={handleSearch}
-                        />
+        <div className="w-full p-6 font-mono bg-[#E2E8F0] min-h-screen">
+            <div className=" mx-auto space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b-4 border-slate-900 pb-6">
+                    <div>
+                        <div className="flex items-center gap-2 text-blue-600 mb-1">
+                            <FiDatabase className="animate-pulse" />
+                            <span className="text-[10px] font-black tracking-[0.3em] uppercase">Storage_Unit // Traders</span>
+                        </div>
+                        <h1 className="text-4xl font-black uppercase italic tracking-tighter text-slate-900">
+                            Trader_Registry
+                        </h1>
                     </div>
-                    <select
-                        className="px-4 py-2.5 border border-gray-300 rounded-sm bg-white text-sm outline-none cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value as any)}
-                    >
-                        <option value="nama_trader">Nama Trader</option>
-                        <option value="kode_trader">Kode Trader</option>
-                        <option value="npwp">NPWP</option>
-                    </select>
+
                     <button
-                        onClick={() => open({
-                            title: "Tambah",
-                            content: <TraderForm type="create" />,
-                            size: "lg",
-                        })}
-                        className="p-4 py-2.5 border border-gray-300 rounded-sm">
-                        Tambah
+                        onClick={() => open({ title: "ADD_TRADER", content: <TraderForm type="create" />, size: "lg" })}
+                        className="bg-blue-600 text-white px-6 py-3 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all flex items-center gap-2 font-black text-xs uppercase"
+                    >
+                        <FiPlus strokeWidth={3} /> Register_New_Entity
                     </button>
                 </div>
 
-                {/* Table Section */}
-                <div className="overflow-x-auto border border-gray-200 rounded-sm shadow-sm">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-linear-to-r from-gray-50 to-gray-100 text-gray-700 text-xs uppercase tracking-wide">
-                            <tr>
-                                <th className="p-4 font-semibold border-b border-gray-200">Kode</th>
-                                <th className="p-4 font-semibold border-b border-gray-200">Nama Trader</th>
-                                <th className="p-4 font-semibold border-b border-gray-200">NPWP</th>
-                                <th className="p-4 font-semibold border-b border-gray-200">Alamat</th>
-                                <th className="p-4 font-semibold text-center border-b border-gray-200">Aksi</th>
+                {/* 2. SEARCH & FILTER BAR (Command Center) */}
+                <div className="bg-slate-800 p-2 border-2 border-slate-900 flex flex-col md:flex-row gap-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.05)]">
+                    <div className="bg-slate-900 border border-slate-700 flex items-center px-3 gap-3 flex-1">
+                        <FiSearch className="text-slate-500" />
+                        <input
+                            type="text"
+                            placeholder={`SEARCH_BY_${filterType.toUpperCase()}...`}
+                            className="bg-transparent w-full py-3 text-xs text-blue-400 outline-none placeholder:text-slate-600 font-bold uppercase"
+                            value={searchTerm}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                        />
+                    </div>
+                    <select
+                        className="bg-slate-900 text-slate-300 border border-slate-700 px-4 py-3 text-[10px] font-black uppercase outline-none focus:text-blue-400 cursor-pointer"
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value as any)}
+                    >
+                        <option value="nama_trader">Filter: Name</option>
+                        <option value="kode_trader">Filter: Code</option>
+                        <option value="npwp">Filter: NPWP</option>
+                    </select>
+                </div>
+
+                {/* 3. THE DATA TABLE */}
+                <div className="bg-white border-2 border-slate-900 shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)] overflow-hidden">
+                    <table className="w-full border-collapse">
+                        <thead>
+                            <tr className="bg-slate-900 text-white">
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-left border-r border-slate-700">Ref_Code</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-left border-r border-slate-700">Entity_Name</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-left border-r border-slate-700">NPWP_ID</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-left border-r border-slate-700">Address_Loc</th>
+                                <th className="p-4 text-[10px] font-black uppercase tracking-widest text-center">Operations</th>
                             </tr>
                         </thead>
-                        <tbody className="text-sm divide-y divide-gray-100">
+                        <tbody className="divide-y-2 divide-slate-100">
                             {isLoading && traders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-12 text-center text-gray-400">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                            <span>Memuat data...</span>
+                                    <td colSpan={5} className="p-20 text-center">
+                                        <span className="text-xs font-black uppercase animate-pulse text-slate-400">Synchronizing_Data...</span>
+                                    </td>
+                                </tr>
+                            ) : currentItems.map((trader) => (
+                                <tr key={trader.id} className="hover:bg-blue-50/50 transition-colors group">
+                                    <td className="p-4 font-black text-xs text-blue-600 border-r border-slate-100">{trader.kode_trader}</td>
+                                    <td className="p-4 font-black text-xs uppercase text-slate-800 border-r border-slate-100">{trader.nama_trader}</td>
+                                    <td className="p-4 text-xs font-bold text-slate-500 border-r border-slate-100 tracking-tighter">{trader.npwp}</td>
+                                    <td className="p-4 text-xs text-slate-800 max-w-xs truncate border-r border-slate-100 italic">
+                                        {trader.alamat_trader}
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex justify-center gap-3">
+                                            <button
+                                                onClick={() => open({ title: "EDIT_ENTITY", content: <TraderForm id={trader.id} type="update" />, size: "lg" })}
+                                                className="text-slate-400 hover:text-blue-600 transition-colors"
+                                                title="EDIT_DATA"
+                                            >
+                                                <FiEdit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => deleteTrader(trader.id)}
+                                                className="text-slate-300 hover:text-red-600 transition-colors"
+                                                title="TERMINATE_RECORD"
+                                            >
+                                                <FiTrash2 size={16} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
-                            ) : currentItems.length > 0 ? (
-                                currentItems.map((trader) => (
-                                    <tr key={trader.id} className="hover:bg-blue-50/50 transition-colors">
-                                        <td className="p-4 font-mono text-blue-600 font-semibold">{trader.kode_trader}</td>
-                                        <td className="p-4 font-semibold text-gray-800 uppercase">{trader.nama_trader}</td>
-                                        <td className="p-4 text-gray-600">{trader.npwp}</td>
-                                        <td className="p-4 text-gray-500 max-w-xs truncate" title={trader.alamat_trader}>
-                                            {trader.alamat_trader}
-                                        </td>
-                                        <td className="p-4">
-                                            <div className="flex justify-center gap-2">
-                                                <button
-                                                    onClick={() => open({
-                                                        title: "Edit",
-                                                        content: <TraderForm id={trader.id} type="update" />,
-                                                        size: "lg",
-                                                    })}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-sm text-xs font-medium hover:bg-amber-200 transition-colors"
-                                                >
-                                                    <FiEdit2 size={14} />
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(trader.id)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-sm text-xs font-medium hover:bg-red-200 transition-colors"
-                                                >
-                                                    <FiTrash2 size={14} />
-                                                    Hapus
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={5} className="p-12 text-center text-gray-500 italic">
-                                        Data tidak ditemukan
-                                    </td>
-                                </tr>
-                            )}
+                            ))}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Pagination Section */}
-                <div className="mt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-sm text-gray-600">
-                        Halaman <span className="font-bold text-gray-800">{currentPage}</span> dari{" "}
-                        <span className="font-bold text-gray-800">{totalPages || 1}</span>
-                    </p>
-                    <div className="flex gap-2">
+                {/* 4. PAGINATION CONTROL */}
+                <div className="flex flex-col md:flex-row justify-between items-center bg-slate-900 p-4 border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                    <div className="text-[10px] font-black text-slate-500 uppercase">
+                        Page <span className="text-blue-500">{currentPage}</span> // Total <span className="text-white">{totalPages || 1}</span>
+                    </div>
+
+                    <div className="flex gap-0.5 mt-4 md:mt-0">
                         <button
                             disabled={currentPage === 1}
                             onClick={() => setCurrentPage((p) => p - 1)}
-                            className="flex items-center gap-1 px-4 py-2 border border-gray-300 rounded-sm text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                            className="bg-slate-800 text-white p-3 border border-slate-700 disabled:opacity-20 hover:bg-blue-600 transition-all"
                         >
-                            <FiChevronLeft size={16} />
-                            Prev
+                            <FiChevronLeft strokeWidth={3} />
                         </button>
                         <button
                             disabled={currentPage === totalPages || totalPages === 0}
                             onClick={() => setCurrentPage((p) => p + 1)}
-                            className="flex items-center gap-1 px-4 py-2 border border-gray-300 rounded-sm text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                            className="bg-slate-800 text-white p-3 border border-slate-700 disabled:opacity-20 hover:bg-blue-600 transition-all"
                         >
-                            Next
-                            <FiChevronRight size={16} />
+                            <FiChevronRight strokeWidth={3} />
                         </button>
                     </div>
                 </div>

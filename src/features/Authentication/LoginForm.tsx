@@ -38,12 +38,9 @@ export default function LoginForm() {
                 }}
             />
             <div className="w-full flex flex-col md:flex-row justify-between items-center gap-4">
-                <Button type="submit" is_loading={is_loading} className="bg-blue-500 hover:bg-blue-600 text-white">
+                <Button type="submit" is_loading={is_loading} className="bg-slate-800 hover:bg-slate-900 text-white border-slate-950">
                     Login
                 </Button>
-                <Link to={"/create-account"} className="text-sm font-semibold hover:underline text-blue-500">
-                    i don&apos;t have an account
-                </Link>
             </div>
         </FormControl>
     )
