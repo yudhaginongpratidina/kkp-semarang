@@ -193,7 +193,6 @@ const ItemQueue = ({ token, queue, name, phone, service_type, status }: any) => 
     const { open } = useModalStore();
     const { updateSMKHPStatus, updateLaboratoriumStatus, updateCustomerServiceStatus, getLaboratorium, getSMKHP, getCustomerService } = useQueueStore();
 
-    // Helper Styles
     const config: any = {
         smkhp: { icon: <FaMobileAlt />, color: "bg-blue-600", prefix: "A" },
         laboratorium: { icon: <FaFlask />, color: "bg-purple-600", prefix: "B" },
@@ -202,20 +201,26 @@ const ItemQueue = ({ token, queue, name, phone, service_type, status }: any) => 
     const current = config[service_type.toLowerCase()] || { icon: null, color: "bg-slate-600", prefix: "Z" };
 
     const handleAction = async () => {
-        callQueue(name, queue, service_type);
-
+        // HANYA panggil suara otomatis saat pertama kali proses
         if (status.toLowerCase() === 'menunggu') {
+            callQueue(name, queue, service_type);
             if (service_type === 'Laboratorium') await updateLaboratoriumStatus(token, "Diproses");
             if (service_type === 'SMKHP') await updateSMKHPStatus(token, "Diproses");
             if (service_type === 'Customer Service') await updateCustomerServiceStatus(token, "Diproses");
             getLaboratorium(); getSMKHP(); getCustomerService();
         } else {
-            // Open Modal based on type
+            // VIEW DATA
             const content = service_type === 'SMKHP' ? <SMKHPQueueDetail token={token} /> :
                 service_type === 'Laboratorium' ? <LabQueueDetail token={token} /> :
                     <CustomerServiceQueueDetail token={token} />;
             open({ title: `OPERATIONAL_DETAIL: ${token.substring(0, 8)}`, content, size: "lg" });
         }
+    };
+
+    // Fungsi khusus untuk panggil ulang (manual trigger)
+    const handleRecall = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Mencegah trigger handleAction
+        callQueue(name, queue, service_type);
     };
 
     return (
@@ -244,16 +249,29 @@ const ItemQueue = ({ token, queue, name, phone, service_type, status }: any) => 
                 </div>
             </div>
 
-            <button
-                onClick={handleAction}
-                className={`ml-4 px-4 py-2 text-[10px] font-black uppercase tracking-widest border-2 transition-all
-                    ${status.toLowerCase() === 'menunggu'
-                        ? 'bg-slate-800 border-slate-800 text-white hover:bg-black'
-                        : 'border-slate-200 text-slate-400 hover:border-slate-800 hover:text-slate-800'}
-                `}
-            >
-                {status.toLowerCase() === 'menunggu' ? 'START_PROSES' : 'VIEW_DATA'}
-            </button>
+            <div className="flex gap-2">
+                {/* TOMBOL RE-CALL: Hanya muncul jika status sudah 'diproses' */}
+                {status.toLowerCase() === 'diproses' && (
+                    <button
+                        onClick={handleRecall}
+                        className="px-3 py-2 text-[10px] font-black uppercase tracking-widest bg-amber-500 border-2 border-amber-500 text-white hover:bg-amber-600 transition-all"
+                        title="Panggil Ulang"
+                    >
+                        RE-CALL
+                    </button>
+                )}
+
+                <button
+                    onClick={handleAction}
+                    className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest border-2 transition-all
+                        ${status.toLowerCase() === 'menunggu'
+                            ? 'bg-slate-800 border-slate-800 text-white hover:bg-black'
+                            : 'border-slate-200 text-slate-400 hover:border-slate-800 hover:text-slate-800'}
+                    `}
+                >
+                    {status.toLowerCase() === 'menunggu' ? 'START_PROSES' : 'VIEW_DATA'}
+                </button>
+            </div>
         </div>
     );
 };

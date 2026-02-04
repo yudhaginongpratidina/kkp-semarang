@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import useQueueStore from "../stores/useQueueStore";
 import { FaMobileAlt, FaFlask, FaHeadset, FaMicrochip, FaExpand } from "react-icons/fa";
 
@@ -35,7 +35,7 @@ export default function QueueView() {
 
         document.addEventListener("fullscreenchange", handleFullscreenChange);
         window.addEventListener("keydown", handleKeyDown);
-        
+
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         const unsubSMKHP = getSMKHP();
         const unsubLAB = getLaboratorium();
@@ -61,11 +61,11 @@ export default function QueueView() {
 
     const latestFeed = [...smkhp, ...laboratorium, ...customer_service]
         .filter(q => q.subStatus !== "Diproses")
-        .sort((a, b) => (a.subStatus === "Dipanggil" ? -1 : 1))
+        .sort((a) => (a.subStatus === "Dipanggil" ? -1 : 1))
         .slice(0, 8); // Ditambah satu karena layar fullscreen lebih luas
 
     return (
-        <div 
+        <div
             onClick={!isFullscreen ? toggleFullscreen : undefined}
             className={`min-h-screen bg-[#050608] text-zinc-300 p-6 font-mono overflow-hidden flex flex-col selection:bg-orange-500/30 ${!isFullscreen ? 'cursor-zoom-in' : 'cursor-default'}`}
         >
@@ -77,7 +77,7 @@ export default function QueueView() {
                     <p className="text-zinc-500 mt-2 italic text-sm">Tekan 'ESC' untuk keluar dari terminal</p>
                 </div>
             )}
-            
+
             {/* --- INDUSTRIAL HEADER --- */}
             <header className="flex justify-between items-center mb-8 border-b-4 border-zinc-800 pb-4 relative">
                 <div className="flex items-center gap-6">
@@ -104,16 +104,16 @@ export default function QueueView() {
             </header>
 
             <main className="grid grid-cols-12 gap-6 flex-1 mb-16">
-                
+
                 {/* --- LEFT: CORE OPS --- */}
                 <div className="col-span-8 flex flex-col gap-6">
-                    
+
                     {/* STATION A: INDUSTRIAL PANEL */}
                     <div className="flex-1 bg-zinc-950 border-2 border-zinc-800 rounded-sm p-8 relative overflow-hidden flex flex-col shadow-2xl">
                         <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
                             <FaMobileAlt className="text-[30rem]" />
                         </div>
-                        
+
                         <div className="flex justify-between items-center border-b border-zinc-800/50 pb-6 mb-6">
                             <div className="flex items-center gap-4">
                                 <div className="w-4 h-4 bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.8)]"></div>
@@ -143,7 +143,7 @@ export default function QueueView() {
 
                     {/* STATION B & C: SUB PANELS */}
                     <div className="h-56 grid grid-cols-2 gap-6">
-                        {[ 
+                        {[
                             { label: 'BRAVO', data: processingLAB, config: CONFIG.Laboratorium, id: 'LAB' },
                             { label: 'CHARLIE', data: processingCS, config: CONFIG["Customer Service"], id: 'CS' }
                         ].map((station, i) => (
@@ -179,29 +179,26 @@ export default function QueueView() {
                             <div className="w-3 h-1 bg-zinc-700"></div>
                         </div>
                     </div>
-                    
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:30px_30px]">
+
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-size-[30px_30px]">
                         {latestFeed.length > 0 ? latestFeed.map((item, idx) => (
-                            <div key={idx} className={`p-4 rounded-sm border-l-4 transition-all duration-500 ${
-                                item.subStatus === 'Dipanggil' 
-                                ? 'bg-orange-600 border-white shadow-[0_0_30px_rgba(234,88,12,0.4)] animate-pulse scale-[1.02]' 
-                                : 'bg-zinc-900/80 border-zinc-700 hover:bg-zinc-800'
-                            }`}>
+                            <div key={idx} className={`p-4 rounded-sm border-l-4 transition-all duration-500 ${item.subStatus === 'Dipanggil'
+                                    ? 'bg-orange-600 border-white shadow-[0_0_30px_rgba(234,88,12,0.4)] animate-pulse scale-[1.02]'
+                                    : 'bg-zinc-900/80 border-zinc-700 hover:bg-zinc-800'
+                                }`}>
                                 <div className="flex justify-between items-end">
-                                    <div className={`text-5xl font-black tracking-tighter leading-none ${
-                                        item.subStatus === 'Dipanggil' ? 'text-white' : 
-                                        item.type === 'SMKHP' ? 'text-blue-400' :
-                                        item.type === 'Laboratorium' ? 'text-purple-400' : 'text-emerald-400'
-                                    }`}>
+                                    <div className={`text-5xl font-black tracking-tighter leading-none ${item.subStatus === 'Dipanggil' ? 'text-white' :
+                                            item.type === 'SMKHP' ? 'text-blue-400' :
+                                                item.type === 'Laboratorium' ? 'text-purple-400' : 'text-emerald-400'
+                                        }`}>
                                         {formatQueue(item.type, item.queueNo)}
                                     </div>
                                     <span className={`text-[10px] font-black px-2 py-0.5 border-2 ${item.subStatus === 'Dipanggil' ? 'border-white text-white' : 'border-zinc-700 text-zinc-600'}`}>
                                         {item.subStatus?.toUpperCase()}
                                     </span>
                                 </div>
-                                <div className={`mt-3 text-sm font-bold uppercase truncate border-t border-black/10 pt-2 ${
-                                    item.subStatus === 'Dipanggil' ? 'text-white' : 'text-zinc-400'
-                                }`}>
+                                <div className={`mt-3 text-sm font-bold uppercase truncate border-t border-black/10 pt-2 ${item.subStatus === 'Dipanggil' ? 'text-white' : 'text-zinc-400'
+                                    }`}>
                                     {item.userName}
                                 </div>
                             </div>

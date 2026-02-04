@@ -4,53 +4,52 @@ import { useSpeechSynthesis } from 'react-speech-kit';
 const useQueueCaller = () => {
     const { speak, voices, cancel, speaking } = useSpeechSynthesis();
 
-    // Mencari voice Indonesia terbaik di browser (Prioritas Google ID)
-    const idVoice = voices.find((v: any) => v.lang.includes('id-ID') && v.name.includes('Google')) ||
-        voices.find((v: any) => v.lang.includes('id'));
+    // ANALISA: Cari voice Inggris (en-US atau en-GB)
+    const enVoice = voices.find((v: any) => v.lang.includes('en-US') && v.name.includes('Google')) || 
+                    voices.find((v: any) => v.lang.includes('en'));
 
     const callQueue = (name: string, queueNo: number, type: string) => {
-        // 1. Konfigurasi Nama Loket (Fonetik)
+        // 1. Loket Configuration
         const config: Record<string, string> = {
-            'SMKHP': 'S M K H P,',
-            'Laboratorium': 'Laboratorium,',
-            'Customer Service': 'Kastemer Servis,'
+            'SMKHP': 'S M K H P unit,',
+            'Laboratorium': 'Laboratory,',
+            'Customer Service': 'Customer Service desk,'
         };
 
-        // 2. Mapping Angka agar disebut 'nol' bukan 'zero'
+        // 2. Number Mapping (Ensuring 'zero' instead of 'nol')
         const map: Record<string, string> = {
-            '0': 'nol', '1': 'satu', '2': 'dua', '3': 'tiga', '4': 'empat',
-            '5': 'lima', '6': 'enam', '7': 'tujuh', '8': 'delapan', '9': 'sembilan'
+            '0': 'zero', '1': 'one', '2': 'two', '3': 'three', '4': 'four',
+            '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine'
         };
 
-        // 3. Mapping Prefix Huruf berdasarkan Sektor
+        // 3. Prefix Letter Mapping
         const letterMap: Record<string, string> = {
-            'SMKHP': ' A',
-            'Laboratorium': ' B',
-            'Customer Service': ' C'
+            'SMKHP': 'A',
+            'Laboratorium': 'B',
+            'Customer Service': 'C'
         };
 
-        const prefixName = config[type] || 'Unit Terkait';
-        const letter = letterMap[type] || 'Nomor';
-
-        // Format nomor: 1 -> "0 0 1" -> "nol nol satu"
+        const prefixName = config[type] || 'designated unit';
+        const letter = letterMap[type] || 'Number';
+        
         const paddedNum = String(queueNo).padStart(3, '0');
         const spokenNumbers = paddedNum.split('').map(digit => map[digit]).join(' ');
 
-        // 4. Konstruksi Kalimat Utama
-        const baseText = `Nomor antrean, ${letter}, ${spokenNumbers}, . . . Atas nama, ${name.toLowerCase()}, . . . harap menuju loket ${prefixName}.`;
+        // 4. English Sentence Construction
+        // Analisa: Gunakan "please proceed to" untuk kesan profesional
+        const baseText = `Queue number, ${letter}, ${spokenNumbers}, . . . for, ${name.toLowerCase()}, . . . please proceed to ${prefixName}.`;
 
-        // 5. Membuat Jeda 2 Detik (Koma beruntun memberikan jeda tanpa memutus stream audio)
-        const jeda2Detik = ", , , , , ,";
-        const fullText = `${baseText} ${jeda2Detik} . . . Sekali lagi . . . ${baseText}`;
+        // 5. 2-Second Delay (Comma strategy)
+        const pause = ", , , , , , , ,"; 
+        const fullText = `${baseText} ${pause} . . . once again . . . ${baseText}`;
 
-        // 6. Eksekusi
-        cancel();
-
+        cancel(); 
+        
         speak({
             text: fullText,
-            voice: idVoice,
-            rate: 0.85, // Kecepatan bicara
-            pitch: 1.1, // lebih ramah
+            voice: enVoice,
+            rate: 0.9,
+            pitch: 1.0, 
         });
     };
 

@@ -44,7 +44,7 @@ const router = createBrowserRouter([
 	{ path: "/user-management", element: <AuthGuard><UserManagementView /></AuthGuard> },
 
 	// queue
-	{ path: "/queue", element: <QueueView /> },
+	{ path: "/queue", element: <AuthGuard><QueueView /></AuthGuard>  },
 ])
 
 // render
