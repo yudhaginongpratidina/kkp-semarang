@@ -24,7 +24,7 @@ const router = createBrowserRouter([
 	// halaman guest → publicOnly
 	{ path: "/", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
 	{ path: "/login", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
-	{ path: "/create-account", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
+	// { path: "/create-account", element: <AuthGuard publicOnly><AuthenticationView /></AuthGuard> },
 
 	// dashboard → hanya user login
 	{ path: "/dashboard", element: <AuthGuard><DashboardView /></AuthGuard> },

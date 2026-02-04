@@ -42,7 +42,7 @@ export default function AuthenticationView() {
 
             <div className="w-full max-w-xl p-4 border rounded-sm border-slate-300 bg-white">
                 {(location.pathname === "/" || location.pathname === "/login") && <LoginForm />}
-                {location.pathname === "/create-account" && <RegisterForm />}
+                {/* {location.pathname === "/create-account" && <RegisterForm />} */}
             </div>
         </main>
     )
