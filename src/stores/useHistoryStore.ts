@@ -8,6 +8,7 @@ import {
     getDoc
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
+import { toast } from 'sonner';
 
 // --- UTILITY FUNCTION ---
 export const formatTanggalLengkap = (dateInput: any) => {
@@ -100,8 +101,13 @@ const useHistoryStore = create<HistoryState>((set) => ({
                 ...doc.data()
             })) as User[];
             set({ users: data });
+            
+            // Opsional: Notifikasi jumlah user (berguna jika data banyak)
+            // toast.info(`Terdeteksi ${data.length} pengguna dalam sistem`);
         } catch (err: any) {
-            set({ error: "Gagal mengambil daftar pengguna" });
+            const msg = "Gagal sinkronisasi daftar pengguna";
+            set({ error: msg });
+            toast.error(msg, { description: "Periksa hak akses database Anda." });
         } finally {
             set({ loadingUser: false });
         }
@@ -109,25 +115,36 @@ const useHistoryStore = create<HistoryState>((set) => ({
 
     async getUserById(uid: string) {
         set({ loadingUser: true, error: null, user: null });
-        try {
+        const promise = async () => {
             const userRef = doc(db, "users", uid);
             const userSnap = await getDoc(userRef);
 
             if (userSnap.exists()) {
-                set({ user: { uid: userSnap.id, ...userSnap.data() } as User });
+                const userData = { uid: userSnap.id, ...userSnap.data() } as User;
+                set({ user: userData });
+                return userData;
             } else {
+                // Fallback query jika ID dokumen bukan UID
                 const usersRef = collection(db, "users");
                 const q = query(usersRef, where("uid", "==", uid));
                 const snap = await getDocs(q);
                 if (!snap.empty) {
                     const docData = snap.docs[0];
-                    set({ user: { uid: docData.id, ...docData.data() } as User });
-                } else {
-                    set({ error: "Pengguna tidak ditemukan" });
+                    const userData = { uid: docData.id, ...docData.data() } as User;
+                    set({ user: userData });
+                    return userData;
                 }
+                throw new Error("ENTITY_NOT_FOUND");
             }
+        };
+
+        try {
+            await promise();
         } catch (err: any) {
-            set({ error: "Gagal mengambil profil" });
+            const isNotFound = err.message === "ENTITY_NOT_FOUND";
+            const msg = isNotFound ? "Pengguna tidak terdaftar" : "Gagal memuat profil";
+            set({ error: msg });
+            toast.error(msg);
         } finally {
             set({ loadingUser: false });
         }
@@ -135,11 +152,15 @@ const useHistoryStore = create<HistoryState>((set) => ({
 
     async getHistoryByUid(uid: string) {
         set({ loadingHistory: true, error: null, histories: [] });
-        try {
+        
+        // Menggunakan toast.promise untuk UX yang lebih 'industrial'
+        const fetchAction = async () => {
             // 1. Ambil data dari collection history
             const historyRef = collection(db, "history");
             const q = query(historyRef, where("uid", "==", uid));
             const snap = await getDocs(q);
+
+            if (snap.empty) return [];
 
             const historyData = snap.docs.map(doc => ({
                 id: doc.id,
@@ -169,16 +190,19 @@ const useHistoryStore = create<HistoryState>((set) => ({
                 })
             );
 
-            // 3. Urutkan berdasarkan timestamp terbaru
+            // 3. Urutkan
             historiesWithOfficer.sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
-
             set({ histories: historiesWithOfficer });
-        } catch (err: any) {
-            console.error("Error history:", err);
-            set({ error: "Gagal mengambil riwayat" });
-        } finally {
-            set({ loadingHistory: false });
-        }
+            return historiesWithOfficer;
+        };
+
+        toast.promise(fetchAction(), {
+            loading: 'Fetching interaction history...',
+            success: (data: any) => `Ditemukan ${data.length} riwayat layanan`,
+            error: 'Gagal mengambil riwayat transaksi',
+        });
+
+        set({ loadingHistory: false });
     }
 }));
 

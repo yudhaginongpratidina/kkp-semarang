@@ -10,6 +10,7 @@ import {
     setDoc,
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
+import { toast } from 'sonner';
 
 // ================= Types =================
 export type Data = {
@@ -120,6 +121,8 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                 queueNo: doc.data().queueNo
             }));
             set({ smkhp: data });
+        }, () => {
+            toast.error("Stream Error (SMKHP)", { description: "Koneksi ke antrean SMKHP terputus." });
         });
     },
 
@@ -137,23 +140,30 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                         npwp: d.npwp || "-"
                     }
                 });
+            } else {
+                toast.error("Data antrean tidak ditemukan.");
             }
-        } catch (err) { set({ error: "Gagal ambil detail" }); }
-        finally { set({ isLoading: false }); }
+        } catch (err) {
+            toast.error("Gagal mengambil detail antrean.");
+        } finally { set({ isLoading: false }); }
     },
 
     updateSMKHPHandle: async (token, catatan) => {
         const { petugas } = get();
-        set({ isLoading: true });
-        try {
-            // 1. Update Status di collection SMKHP
+        if (!petugas.nama) {
+            toast.warning("Data petugas belum diatur.");
+            return; // Pastikan berhenti di sini
+        }
+
+        const processUpdate = async (): Promise<void> => {
+            // 1. Update Status
             await updateDoc(doc(db, "SMKHP", token), {
                 subStatus: "Selesai",
-                status: "active", 
+                status: "active",
                 updatedAt: Date.now()
             });
 
-            // 2. Simpan catatan petugas ke collection 'officer_notes'
+            // 2. Simpan Catatan
             await setDoc(doc(db, "officer_notes", token), {
                 nama_petugas: petugas.nama,
                 nip_petugas: petugas.nip,
@@ -161,13 +171,23 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                 layanan: "SMKHP",
                 timestamp: Date.now()
             });
-        } catch (err) {
-            set({ error: "Gagal memproses data" });
-        } finally { set({ isLoading: false }); }
+        };
+
+        // Tambahkan .then(() => {}) untuk memastikan return type-nya adalah Promise<void>
+        await toast.promise(processUpdate(), {
+            loading: 'Memproses penyelesaian antrean...',
+            success: 'Antrean SMKHP berhasil diselesaikan.',
+            error: 'Gagal memproses penyelesaian antrean.'
+        });
     },
 
     updateSMKHPStatus: async (token, status) => {
-        await updateDoc(doc(db, "SMKHP", token), { subStatus: status });
+        try {
+            await updateDoc(doc(db, "SMKHP", token), { subStatus: status });
+            toast.success(`Status diperbarui: ${status}`);
+        } catch (err) {
+            toast.error("Gagal memperbarui status.");
+        }
     },
 
     // ================= Laboratorium Actions =================
@@ -184,7 +204,7 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                 queueNo: doc.data().queueNo
             }));
             set({ laboratorium: data });
-        });
+        }, () => toast.error("Stream Error (LAB)"));
     },
 
     getLaboratoriumByToken: async (token: string) => {
@@ -206,19 +226,19 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                     }
                 });
             }
+        } catch (err) {
+            toast.error("Gagal memuat detail laboratorium.");
         } finally { set({ isLoading: false }); }
     },
 
     updateLaboratoriumHandle: async (token, catatan) => {
         const { petugas } = get();
-        set({ isLoading: true });
-        try {
+        const process = async () => {
             await updateDoc(doc(db, "LAB", token), {
                 subStatus: "Selesai",
                 status: "active",
                 updatedAt: Date.now()
             });
-
             await setDoc(doc(db, "officer_notes", token), {
                 nama_petugas: petugas.nama,
                 nip_petugas: petugas.nip,
@@ -226,13 +246,20 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                 layanan: "Laboratorium",
                 timestamp: Date.now()
             });
-        } catch (err) {
-            set({ error: "Gagal memproses data" });
-        } finally { set({ isLoading: false }); }
+        };
+
+        toast.promise(process(), {
+            loading: 'Menyelesaikan antrean LAB...',
+            success: 'Antrean Laboratorium selesai.',
+            error: 'Gagal menyelesaikan antrean LAB.'
+        });
     },
 
     updateLaboratoriumStatus: async (token, status) => {
-        await updateDoc(doc(db, "LAB", token), { subStatus: status });
+        try {
+            await updateDoc(doc(db, "LAB", token), { subStatus: status });
+            toast.success(`LAB: ${status}`);
+        } catch (err) { toast.error("Gagal update status LAB."); }
     },
 
     // ================= Customer Service Actions =================
@@ -249,7 +276,7 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                 queueNo: doc.data().queueNo
             }));
             set({ customer_service: data });
-        });
+        }, () => toast.error("Stream Error (CS)"));
     },
 
     getCustomerServiceByToken: async (token: string) => {
@@ -269,19 +296,18 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                     }
                 });
             }
-        } finally { set({ isLoading: false }); }
+        } catch (err) { toast.error("Gagal memuat detail CS."); }
+        finally { set({ isLoading: false }); }
     },
 
     updateCustomerServiceHandle: async (token, catatan) => {
         const { petugas } = get();
-        set({ isLoading: true });
-        try {
+        const process = async () => {
             await updateDoc(doc(db, "CustomerService", token), {
                 subStatus: "Selesai",
                 status: "active",
                 updatedAt: Date.now()
             });
-
             await setDoc(doc(db, "officer_notes", token), {
                 nama_petugas: petugas.nama,
                 nip_petugas: petugas.nip,
@@ -289,13 +315,20 @@ const useQueueStore = create<QueueState & QueueAction>((set, get) => ({
                 layanan: "Customer Service",
                 timestamp: Date.now()
             });
-        } catch (err) {
-            set({ error: "Gagal memproses data" });
-        } finally { set({ isLoading: false }); }
+        };
+
+        toast.promise(process(), {
+            loading: 'Menyelesaikan antrean CS...',
+            success: 'Layanan CS berhasil ditutup.',
+            error: 'Gagal menutup layanan CS.'
+        });
     },
 
     updateCustomerServiceStatus: async (token, status) => {
-        await updateDoc(doc(db, "CustomerService", token), { subStatus: status });
+        try {
+            await updateDoc(doc(db, "CustomerService", token), { subStatus: status });
+            toast.success(`CS: ${status}`);
+        } catch (err) { toast.error("Gagal update status CS."); }
     },
 }));
 

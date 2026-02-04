@@ -54,7 +54,6 @@ export default function NoAjuForm({ type }: { type: "create" | "update" }) {
         if (uid) {
             try {
                 await upsert_no_aju(uid, noAjuItems);
-                alert("Data berhasil di-sync ke database.");
             } catch (err: any) {
                 console.error(err.message);
             }
