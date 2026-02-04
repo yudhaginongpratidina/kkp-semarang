@@ -8,7 +8,7 @@ import { FiTerminal, FiDatabase, FiAlertTriangle } from "react-icons/fi";
 import useTraderStore from "../../stores/useTraderStore";
 
 // components
-import { FormControl, TextField, Button } from "../../components";
+import { FormControl, TextField } from "../../components";
 
 const traderSchema = z.object({
     nama_trader: z.string().min(3, "Minimal 3 karakter"),
@@ -85,22 +85,20 @@ export default function TraderForm({ type, id }: { type: "create" | "update", id
             <div className="flex border-b-4 border-slate-900 mb-6">
                 <button
                     onClick={() => setActiveTab("manual")}
-                    className={`px-6 py-2 text-[10px] font-black uppercase transition-all border-t-2 border-x-2 border-transparent ${
-                        activeTab === "manual" 
-                        ? "bg-slate-900 text-white border-slate-900" 
-                        : "text-slate-400 hover:text-slate-600"
-                    }`}
+                    className={`px-6 py-2 text-[10px] font-black uppercase transition-all border-t-2 border-x-2 border-transparent ${activeTab === "manual"
+                            ? "bg-slate-900 text-white border-slate-900"
+                            : "text-slate-400 hover:text-slate-600"
+                        }`}
                 >
                     Manual_Entry
                 </button>
                 {type === "create" && (
                     <button
                         onClick={() => setActiveTab("import")}
-                        className={`px-6 py-2 text-[10px] font-black uppercase transition-all border-t-2 border-x-2 border-transparent ${
-                            activeTab === "import" 
-                            ? "bg-slate-900 text-white border-slate-900" 
-                            : "text-slate-400 hover:text-slate-600"
-                        }`}
+                        className={`px-6 py-2 text-[10px] font-black uppercase transition-all border-t-2 border-x-2 border-transparent ${activeTab === "import"
+                                ? "bg-slate-900 text-white border-slate-900"
+                                : "text-slate-400 hover:text-slate-600"
+                            }`}
                     >
                         Bulk_Import_XLSX
                     </button>
@@ -181,9 +179,8 @@ export default function TraderForm({ type, id }: { type: "create" | "update", id
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className={`w-full py-4 text-[11px] font-black uppercase tracking-widest border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2 ${
-                                    type === 'update' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'
-                                }`}
+                                className={`w-full py-4 text-[11px] font-black uppercase tracking-widest border-2 border-slate-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2 ${type === 'update' ? 'bg-orange-500 text-white' : 'bg-blue-600 text-white'
+                                    }`}
                             >
                                 <FiDatabase />
                                 {isLoading ? "PROCESSING..." : type === "update" ? "EXECUTE_UPDATE" : "COMMIT_REGISTRY"}
@@ -206,7 +203,7 @@ export default function TraderForm({ type, id }: { type: "create" | "update", id
                         className="hidden"
                         disabled={loadingImport}
                     />
-                    
+
                     <label
                         htmlFor="excel-upload-trader"
                         className="cursor-pointer bg-white border-2 border-slate-900 px-8 py-3 text-[10px] font-black uppercase hover:bg-slate-900 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] inline-block"
