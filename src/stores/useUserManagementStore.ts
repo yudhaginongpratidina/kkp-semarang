@@ -2,6 +2,7 @@ import { doc, updateDoc, collection, getDocs, deleteDoc, setDoc, getDoc } from "
 import { create } from 'zustand';
 import { auth, db } from "../configs/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { toast } from 'sonner';
 
 export type Officer = {
     id: string;
@@ -52,7 +53,6 @@ const useUserManagementStore = create<UserManagementState & RoleManagementAction
     is_error: false,
     message: '',
 
-
     setField: (key, value) => set({ [key]: value } as Partial<UserManagementState>),
 
     reset: () => set({ ...initialState, is_loading: false, is_error: false, message: '' }),
@@ -61,72 +61,88 @@ const useUserManagementStore = create<UserManagementState & RoleManagementAction
         set({ is_loading: true, is_error: false });
         try {
             const snapshot = await getDocs(collection(db, 'officers'));
-            const officersData: Officer[] = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    full_name: data.full_name ?? '',
-                    nip: data.nip ?? '',
-                    role: data.role ?? ''
-                };
-            });
+            const officersData: Officer[] = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Officer[];
             set({ officers: officersData, is_loading: false });
         } catch (error: any) {
             set({ is_loading: false, is_error: true, message: error.message });
+            toast.error("Gagal memuat daftar petugas");
         }
     },
 
     update_role_officer: async (id, newRole) => {
         set({ is_loading: true });
-        try {
-            await updateDoc(doc(db, 'officers', id), { role: newRole });
-            set((state) => ({
-                officers: state.officers.map(off => off.id === id ? { ...off, role: newRole } : off),
-                is_loading: false
-            }));
-        } catch (error: any) {
-            set({ is_loading: false, is_error: true });
-        }
+        const promise = updateDoc(doc(db, 'officers', id), { role: newRole });
+
+        toast.promise(promise, {
+            loading: 'Memperbarui role...',
+            success: () => {
+                set((state) => ({
+                    officers: state.officers.map(off => off.id === id ? { ...off, role: newRole } : off),
+                    is_loading: false
+                }));
+                return `Role berhasil diubah ke ${newRole}`;
+            },
+            error: () => {
+                set({ is_loading: false, is_error: true });
+                return "Gagal memperbarui role";
+            }
+        });
     },
 
     update_officer: async (id) => {
         const { full_name, nip, role } = get();
         set({ is_loading: true });
-        try {
+
+        const promise = async () => {
             await updateDoc(doc(db, 'officers', id), { full_name, nip, role });
-            set({ is_loading: false });
-            get().get_officers(); // Refresh list
-        } catch (error: any) {
-            set({ is_loading: false, is_error: true });
-        }
+            await get().get_officers();
+        };
+
+        toast.promise(promise(), {
+            loading: 'Menyimpan perubahan...',
+            success: 'Data petugas berhasil diperbarui',
+            error: () => {
+                set({ is_loading: false, is_error: true });
+                return "Gagal memperbarui data petugas";
+            }
+        });
     },
 
-    create_officer: async () => {
+    create_officer: async (): Promise<void> => { // Tambahkan tipe return eksplisit
         const { full_name, nip, role } = get();
-        set({ is_loading: true, is_error: false });
-        try {
-            const email = generateEmail(full_name);
+        if (!full_name || !nip || !role) {
+            toast.error("Semua field harus diisi!");
+            return;
+        }
 
-            // 1. Daftarkan ke Firebase Authentication
+        set({ is_loading: true, is_error: false });
+
+        const promise = async () => {
+            const email = generateEmail(full_name);
             const userCredential = await createUserWithEmailAndPassword(auth, email, nip);
             const uid = userCredential.user.uid;
 
-            // 2. Simpan profil lengkap ke Firestore menggunakan UID yang sama
             await setDoc(doc(db, 'officers', uid), {
-                full_name,
-                nip,
-                role,
-                email,
+                full_name, nip, role, email,
                 created_at: new Date().toISOString()
             });
 
-            set({ is_loading: false });
             get().reset();
-            get().get_officers();
-        } catch (error: any) {
-            set({ is_loading: false, is_error: true, message: error.message });
-            alert("Gagal daftar: " + error.message);
-        }
+            await get().get_officers();
+        };
+
+        // Tambahkan 'await' dan pastikan tidak ada data yang di-return ke store
+        await toast.promise(promise(), {
+            loading: 'Mendaftarkan petugas baru...',
+            success: 'Petugas berhasil didaftarkan',
+            error: (err) => {
+                set({ is_loading: false, is_error: true, message: err.message });
+                return `Pendaftaran gagal: ${err.message}`;
+            }
+        });
     },
 
     get_officer_by_id: async (id) => {
@@ -139,63 +155,65 @@ const useUserManagementStore = create<UserManagementState & RoleManagementAction
             }
         } catch (error: any) {
             set({ is_loading: false, is_error: true });
+            toast.error("Gagal mengambil data petugas");
         }
     },
 
     delete_officer: async (id: string) => {
         set({ is_loading: true, is_error: false });
-        try {
-            // Hapus data di Firestore
+
+        const promise = async () => {
             await deleteDoc(doc(db, 'officers', id));
-
-            // Berikan notifikasi karena keterbatasan Client SDK
-            console.warn("Data Firestore dihapus. Akun Authentication harus dihapus via Admin SDK atau Firebase Console.");
-
-            // Update state local agar UI langsung sinkron
             set((state) => ({
                 officers: state.officers.filter(off => off.id !== id),
                 is_loading: false
             }));
+        };
 
-        } catch (error: any) {
-            set({ is_loading: false, is_error: true, message: error.message });
-            alert("Gagal menghapus data: " + error.message);
-        }
+        toast.promise(promise(), {
+            loading: 'Menghapus data petugas...',
+            success: 'Data Firestore dihapus. Ingat hapus akun di Firebase Console!',
+            error: (err) => {
+                set({ is_loading: false, is_error: true, message: err.message });
+                return "Gagal menghapus data";
+            }
+        });
     },
-    import_users_excel: async (data: any[]) => {
+
+    import_users_excel: async (data: any[]): Promise<void> => { // Tambahkan tipe return eksplisit
         set({ is_loading: true, is_error: false });
         const VALID_ROLES = ["operator", "customer_service", "laboratorium", "superuser"];
 
-        try {
-            // Karena Firebase Auth tidak mendukung batch, kita gunakan loop async
+        const promise = async () => {
+            let count = 0;
             for (const row of data) {
                 const name = row.full_name || "Tanpa Nama";
                 const nip = String(row.nip || "0000000000");
                 const email = `${name.trim().split(" ")[0].toLowerCase()}@company.com`;
-
                 let role = String(row.role).toLowerCase().trim();
                 if (!VALID_ROLES.includes(role)) role = "operator";
 
-                // 1. Create Auth User
                 const userCred = await createUserWithEmailAndPassword(auth, email, nip);
-
-                // 2. Create Firestore Doc
                 await setDoc(doc(db, 'officers', userCred.user.uid), {
-                    full_name: name,
-                    nip,
-                    role,
-                    email,
+                    full_name: name, nip, role, email,
                     created_at: new Date().toISOString()
                 });
+                count++;
             }
+            await get().get_officers();
+            return count; // Nilai ini hanya untuk success message toast
+        };
 
-            set({ is_loading: false });
-            get().get_officers();
-        } catch (error: any) {
-            set({ is_loading: false, is_error: true, message: error.message });
-            throw error;
-        }
+        // Bungkus dengan await agar return type fungsi luar tetap void
+        await toast.promise(promise(), {
+            loading: 'Mengimpor petugas masal...',
+            success: (count) => `${count} petugas berhasil diimpor`,
+            error: (err) => {
+                set({ is_loading: false, is_error: true, message: err.message });
+                return `Import gagal: ${err.message}`;
+            }
+        });
     },
 }));
 
-export default useUserManagementStore
+export default useUserManagementStore;

@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { collection, onSnapshot } from "firebase/firestore"
 import { db } from "../configs/firebase"
+import { toast } from 'sonner';
 
 export type Data = {
     count: number
@@ -39,6 +40,9 @@ const useAnalyticStore = create<AnalyticState & AnalyticAction>((set) => ({
 
     subscribeAnalytics: (targetYear = new Date().getFullYear()) => {
         set({ isLoading: true, error: null })
+        
+        // Flag untuk menandai apakah ini push data pertama kali
+        let isInitialLoad = true;
 
         const unsub = onSnapshot(
             collection(db, "counters"),
@@ -54,9 +58,10 @@ const useAnalyticStore = create<AnalyticState & AnalyticAction>((set) => ({
 
                 snap.docs.forEach((doc) => {
                     const d = doc.data() as Data
-                    // doc.id format: SMKHP_20240520
                     const [service, dateStr] = doc.id.split("_")
                     
+                    if (!dateStr || dateStr.length < 8) return; // Guard clause jika format ID salah
+
                     const y = parseInt(dateStr.slice(0, 4))
                     const m = parseInt(dateStr.slice(4, 6)) - 1
                     
@@ -81,10 +86,27 @@ const useAnalyticStore = create<AnalyticState & AnalyticAction>((set) => ({
                     monthlyStats: stats, 
                     isLoading: false 
                 })
+
+                // STRATEGI TOAST: Hanya munculkan saat data pertama kali berhasil ditarik
+                if (isInitialLoad) {
+                    toast.success(`Analytics Sync: ${targetYear} Data Loaded`, {
+                        description: `Berhasil memproses ${snap.size} entri data.`,
+                        icon: '📊'
+                    });
+                    isInitialLoad = false;
+                }
             },
             (err) => {
-                console.error(err)
+                console.error("FIREBASE_ANALYTIC_ERROR:", err)
                 set({ error: "Gagal load analytics", isLoading: false })
+                
+                toast.error("Connection Failed", {
+                    description: "Gagal menyambungkan ke stream analitik. Cek koneksi Anda.",
+                    action: {
+                        label: "Retry",
+                        onClick: () => window.location.reload(),
+                    },
+                });
             }
         )
         return unsub

@@ -10,6 +10,7 @@ import {
     writeBatch,
 } from "firebase/firestore";
 import { db } from "../configs/firebase";
+import { toast } from 'sonner';
 
 // ================= Types =================
 export interface Trader {
@@ -59,8 +60,11 @@ const useTraderStore = create<TraderState & TraderAction>((set) => ({
                 ...doc.data(),
             })) as Trader[];
             set({ traders: data, isLoading: false });
-        }, () => {
+            toast.success("Sync Success");
+        }, (err) => {
+            console.error(err);
             set({ error: "Gagal mengambil data", isLoading: false });
+            toast.error("Sync Error", { description: "Koneksi ke data trader terputus." });
         });
         return unsubscribe;
     },
@@ -73,38 +77,40 @@ const useTraderStore = create<TraderState & TraderAction>((set) => ({
             if (docSnap.exists()) {
                 set({ trader: { id: docSnap.id, ...docSnap.data() } as Trader, isLoading: false });
             } else {
-                set({ error: "Trader tidak ditemukan", isLoading: false });
+                throw new Error("Trader tidak ditemukan");
             }
-        } catch (err) {
-            set({ error: "Gagal memuat detail", isLoading: false });
+        } catch (err: any) {
+            set({ error: err.message, isLoading: false });
+            toast.error("Detail Error", { description: err.message });
         }
     },
 
     addTrader: async (data) => {
         set({ isLoading: true, error: null });
-        try {
-            // Gunakan NPWP mentah dari form sebagai ID (misal: 00.219.282.9-650.3000)
+        const process = async (): Promise<void> => {
             const rawNPWP = String(data.npwp).trim();
             if (!rawNPWP) throw new Error("NPWP tidak boleh kosong!");
             
             const docRef = doc(db, "traders", rawNPWP);
             const checkDoc = await getDoc(docRef);
-            if (checkDoc.exists()) throw new Error("Trader dengan NPWP ini sudah terdaftar!");
+            if (checkDoc.exists()) throw new Error("NPWP sudah terdaftar!");
 
             await setDoc(docRef, { ...data, npwp: rawNPWP, id: rawNPWP });
             set({ isLoading: false });
-        } catch (err: any) {
-            set({ isLoading: false, error: err.message });
-            throw err;
-        }
+        };
+
+        await toast.promise(process(), {
+            loading: 'Mendaftarkan trader baru...',
+            success: 'Trader berhasil ditambahkan.',
+            error: (err) => err.message || 'Gagal menambah trader.'
+        });
     },
 
     updateTrader: async (oldId, data) => {
         set({ isLoading: true, error: null });
-        try {
+        const process = async (): Promise<void> => {
             const newId = String(data.npwp).trim();
             
-            // Jika ID (NPWP) berubah, kita migrasi datanya
             if (oldId !== newId) {
                 const batch = writeBatch(db);
                 const oldDocRef = doc(db, "traders", oldId);
@@ -117,42 +123,47 @@ const useTraderStore = create<TraderState & TraderAction>((set) => ({
                 batch.delete(oldDocRef);
                 await batch.commit();
             } else {
-                // Jika NPWP tetap, cukup update doc lama
                 const docRef = doc(db, "traders", oldId);
                 await setDoc(docRef, { ...data, npwp: newId }, { merge: true });
             }
             set({ isLoading: false });
-        } catch (err: any) {
-            set({ isLoading: false, error: err.message });
-            throw err;
-        }
+        };
+
+        await toast.promise(process(), {
+            loading: 'Memperbarui data trader...',
+            success: 'Perubahan berhasil disimpan.',
+            error: (err) => err.message || 'Gagal memperbarui data.'
+        });
     },
 
     deleteTrader: async (id) => {
         set({ isLoading: true, error: null });
-        try {
+        const process = async (): Promise<void> => {
             await deleteDoc(doc(db, "traders", id));
             set({ isLoading: false });
-        } catch (err) {
-            set({ isLoading: false, error: "Gagal menghapus" });
-            throw err;
-        }
+        };
+
+        await toast.promise(process(), {
+            loading: 'Menghapus data trader...',
+            success: 'Trader telah dihapus dari sistem.',
+            error: 'Gagal menghapus trader.'
+        });
     },
 
     importTradersFromExcel: async (data: any[]) => {
         set({ loadingImport: true, error: null });
-        try {
-            // Filter baris yang minimal punya nama dan npwp
+        
+        const processImport = async (): Promise<number> => {
             const validData = data.filter(item => item.nama_trader && item.npwp);
-            if (validData.length === 0) throw new Error("Format file tidak sesuai atau data kosong.");
+            if (validData.length === 0) throw new Error("File kosong atau format salah.");
 
-            // Chunking per 500 data (Firestore Batch Limit)
+            let totalImported = 0;
+
             for (let i = 0; i < validData.length; i += 500) {
                 const chunk = validData.slice(i, i + 500);
                 const batch = writeBatch(db);
 
                 chunk.forEach((item) => {
-                    // Pakai format asli dari Excel (e.g. 00.219.282.9-650.3000)
                     const rawNPWP = String(item.npwp).trim();
                     const docRef = doc(db, "traders", rawNPWP);
                     
@@ -164,15 +175,20 @@ const useTraderStore = create<TraderState & TraderAction>((set) => ({
                         alamat_trader: String(item.alamat_trader || "").trim(),
                         updatedAt: new Date().getTime()
                     }, { merge: true });
+                    totalImported++;
                 });
 
                 await batch.commit();
             }
             set({ loadingImport: false });
-        } catch (err: any) {
-            set({ loadingImport: false, error: err.message });
-            throw err;
-        }
+            return totalImported;
+        };
+
+        toast.promise(processImport(), {
+            loading: 'Mengimpor data massal ke database...',
+            success: (count) => `Batch Import Berhasil: ${count} trader diproses.`,
+            error: (err) => `Import Gagal: ${err.message}`
+        });
     }
 }));
 
